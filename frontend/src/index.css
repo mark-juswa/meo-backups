@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+
+/* para to sa calendar design man */
+.past-time-slot {
+  background-color: #f4f4f4 !important;
+  
+
+  background-image: repeating-linear-gradient(
+    45deg,
+    #e0e0e0,
+    #e0e0e0 10px,
+    #f4f4f4 10px,
+    #f4f4f4 20px
+  ) !important;
+  
+
+  opacity: 0.7;
+  cursor: not-allowed !important;
+  color: #a0a0a0 !important;
+}
+
+
+#pdf-print-container .page {
+  width: 8.5in;
+  min-height: 11in;
+  box-sizing: border-box;
+  padding: 0.2in;
+  page-break-after: always;
+}
