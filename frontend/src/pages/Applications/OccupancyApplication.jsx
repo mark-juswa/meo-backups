@@ -448,39 +448,33 @@ const OccupancyApplication = () => {
             </div>
           {/* Section 1 - Permit info */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-700 border-b-2 border-indigo-100 pb-2">1. Permit Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
-
+            <h2 className="text-xl font-semibold text-gray-800">1. Permit Information</h2>
+            <p className="text-sm text-gray-500">We’ll verify your building permit and fire safety details. These help us confirm your project is eligible for occupancy.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
               <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Building Permit Reference Number: <span className="text-red-500">*</span>
-              </label>
-              <input 
-                type="text" 
-                value={formData.buildingPermitReferenceNo} 
-                onChange={handleBuildingPermitRefChange} 
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-lg" 
-                placeholder="Enter your building permit reference number"
-                required 
-              />
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Building Permit Reference Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.buildingPermitReferenceNo}
+                  onChange={handleBuildingPermitRefChange}
+                  className="mt-1 block w-full p-2 border border-gray-300 rounded-lg"
+                  placeholder="e.g., BP-2024-000123"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">This must match the reference number from your approved Building Permit.</p>
               </div>
-             
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
-
-              {/* Section 1 - Permit info 
-            */}
-
               <div>
-                <label className="block text-sm font-medium text-gray-700">Date Issued (Building Permit):</label>
+                <label className="block text-sm font-medium text-gray-700">Date Issued (Building Permit)</label>
                 <input type="date" name="buildingPermitDate" value={formData.permitInfo.buildingPermitDate} onChange={handlePermitInfoChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">FSEC No.:</label>
-                <input type="text" name="fsecNo" value={formData.permitInfo.fsecNo} onChange={handlePermitInfoChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg" required />
+                <label className="block text-sm font-medium text-gray-700">FSEC No.</label>
+                <input type="text" name="fsecNo" value={formData.permitInfo.fsecNo} onChange={handlePermitInfoChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg" placeholder="e.g., FSEC-12345" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Date Issued (FSEC):</label>
+                <label className="block text-sm font-medium text-gray-700">Date Issued (FSEC)</label>
                 <input type="date" name="fsecDate" value={formData.permitInfo.fsecDate} onChange={handlePermitInfoChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg" required />
               </div>
             </div>
@@ -488,76 +482,98 @@ const OccupancyApplication = () => {
 
           {/* Section 2 - Owner */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-700 border-b-2 border-indigo-100 pb-2">2. Owner/Permittee Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input type="text" name="lastName" placeholder="Last name" value={formData.ownerDetails.lastName} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded" />
-              <input type="text" name="givenName" placeholder="Given name" value={formData.ownerDetails.givenName} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded" />
-              <input type="text" name="middleInitial" placeholder="M.I." value={formData.ownerDetails.middleInitial} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-              <input type="text" name="address" placeholder="Address" value={formData.ownerDetails.address} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded col-span-2" />
-              <input type="number" name="zip" placeholder="ZIP" value={formData.ownerDetails.zip} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded" />
-              <input type="text" name="telNo" placeholder="Tel No." value={formData.ownerDetails.telNo} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded col-span-1" />
+            <h2 className="text-xl font-semibold text-gray-800">2. Owner / Permittee Details</h2>
+            <p className="text-sm text-gray-500">Tell us who is applying. We’ll use this for the certificate and contact information.</p>
+
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Full Name</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input type="text" name="lastName" placeholder="Last Name" value={formData.ownerDetails.lastName} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded" />
+                  <input type="text" name="givenName" placeholder="Given Name" value={formData.ownerDetails.givenName} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded" />
+                  <input type="text" name="middleInitial" placeholder="M.I." value={formData.ownerDetails.middleInitial} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Address</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input type="text" name="address" placeholder="Street address, barangay, city" value={formData.ownerDetails.address} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded col-span-2" />
+                  <input type="number" name="zip" placeholder="ZIP Code" value={formData.ownerDetails.zip} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Contact</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input type="text" name="telNo" placeholder="Telephone Number" value={formData.ownerDetails.telNo} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded md:col-span-1" />
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Section 3 - Requirements */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-700 border-b-2 border-indigo-100 pb-2">3. Requirements Submitted</h2>
+            <h2 className="text-xl font-semibold text-gray-800">3. Requirements Submitted</h2>
+            <p className="text-sm text-gray-500">This is a quick checklist for your reference. File uploads happen on the next page after submitting the application.</p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
               {[
-                {value: 'req_permit', label: 'Issued Building Permit and Plans (1 set)', id: 'req_building_plans'},
-                {value: 'req_logbook', label: 'Construction Logbook, signed and sealed', id: 'req_logbook'},
-                {value: 'req_photos', label: 'Photos of Site/Project showing completion', id: 'req_photos'},
-                {value: 'req_completion', label: '4 Sets Certificate of Completion', id: 'req_completion'},
-                {value: 'req_asbuilt', label: 'As-Built Plans and Specifications', id: 'req_asbuilt'},
-                {value: 'req_fsec', label: 'Issued Fire Safety Evaluation Clearance (FSEC)', id: 'req_fsec'}
+                {value: 'req_permit', label: 'Issued Building Permit and Plans (1 set)', helper: 'Bring the complete set including stamps and annotations.'},
+                {value: 'req_logbook', label: 'Construction Logbook, signed and sealed', helper: 'Logbook must be up-to-date and sealed by engineer.'},
+                {value: 'req_photos', label: 'Photos of Site/Project showing completion', helper: 'Show multiple angles including exterior and interior.'},
+                {value: 'req_completion', label: '4 Sets Certificate of Completion', helper: 'Signed by the engineer/architect of record.'},
+                {value: 'req_asbuilt', label: 'As-Built Plans and Specifications', helper: 'Reflects final construction condition.'},
+                {value: 'req_fsec', label: 'Issued Fire Safety Evaluation Clearance (FSEC)', helper: 'Obtained from Fire Department.'}
               ].map(item => (
-                <label key={item.value} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer">
-                  <input type="checkbox" value={item.value} checked={formData.requirementsSubmitted.includes(item.value)} onChange={handleRequirementsChange} />
-                  <span>{item.label}</span>
+                <label key={item.value} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer">
+                  <input type="checkbox" value={item.value} checked={formData.requirementsSubmitted.includes(item.value)} onChange={handleRequirementsChange} className="mt-1" />
+                  <span>
+                    <span className="block font-medium">{item.label}</span>
+                    <span className="block text-xs text-gray-500">{item.helper}</span>
+                  </span>
                 </label>
               ))}
             </div>
             <div>
-              <label className="block text-sm">Other documents (specify):</label>
-              <input type="text" name="otherDocs" value={formData.otherDocs} onChange={handleOtherDocsChange} className="mt-1 p-2 border border-gray-300 rounded w-full" />
+              <label className="block text-sm font-medium text-gray-700">Other documents (specify)</label>
+              <input type="text" name="otherDocs" value={formData.otherDocs} onChange={handleOtherDocsChange} className="mt-1 p-2 border border-gray-300 rounded w-full" placeholder="e.g., Additional certifications or permits" />
             </div>
           </div>
 
           {/* Section 4 - Project */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-700 border-b-2 border-indigo-100 pb-2">4. Project Details</h2>
-            <div>
-              <label>Name of Project</label>
-              <input required type="text" name="projectName" value={formData.projectDetails.projectName} onChange={handleProjectDetailsChange} className="mt-1 p-2 border border-gray-300 rounded w-full" />
-            </div>
-            <div>
-              <label>Project Location</label>
-              <input required type="text" name="projectLocation" value={formData.projectDetails.projectLocation} onChange={handleProjectDetailsChange} className="mt-1 p-2 border border-gray-300 rounded w-full" />
-            </div>
-            <div>
-              <label>Use/Character of Occupancy</label>
-              <input required type="text" name="occupancyUse" value={formData.projectDetails.occupancyUse} onChange={handleProjectDetailsChange} className="mt-1 p-2 border border-gray-300 rounded w-full" />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <input type="number" name="noStoreys" value={formData.projectDetails.noStoreys} onChange={handleProjectDetailsChange} className="p-2 rounded border border-gray-300" placeholder="No. of Storeys" required />
-              <input type="number" name="noUnits" value={formData.projectDetails.noUnits} onChange={handleProjectDetailsChange} className="p-2 rounded border border-gray-300" placeholder="No. of Units" />
-              <input type="text" name="totalFloorArea" value={formData.projectDetails.totalFloorArea} onChange={handleProjectDetailsChange} className="p-2 rounded border border-gray-300" placeholder="Total Floor Area" />
-            </div>
-            <div>
-              <label>Date of Completion</label>
-              <input required type="date" name="dateCompletion" value={formData.projectDetails.dateCompletion} onChange={handleProjectDetailsChange} className="mt-1 p-2 rounded w-full" />
+            <h2 className="text-xl font-semibold text-gray-800">4. Project Details</h2>
+            <p className="text-sm text-gray-500">Provide details about your project. We use this to verify the scope and usage for occupancy.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Project Name</label>
+                <input required type="text" name="projectName" value={formData.projectDetails.projectName} onChange={handleProjectDetailsChange} className="mt-1 p-2 border border-gray-300 rounded w-full" placeholder="e.g., ABC Residences Tower 1" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Project Location</label>
+                <input required type="text" name="projectLocation" value={formData.projectDetails.projectLocation} onChange={handleProjectDetailsChange} className="mt-1 p-2 border border-gray-300 rounded w-full" placeholder="Street, Barangay, City" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">Use / Character of Occupancy</label>
+                <input required type="text" name="occupancyUse" value={formData.projectDetails.occupancyUse} onChange={handleProjectDetailsChange} className="mt-1 p-2 border border-gray-300 rounded w-full" placeholder="e.g., Residential Dwelling, Commercial, Educational" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:col-span-2">
+                <input type="number" name="noStoreys" value={formData.projectDetails.noStoreys} onChange={handleProjectDetailsChange} className="p-2 rounded border border-gray-300" placeholder="No. of Storeys" required />
+                <input type="number" name="noUnits" value={formData.projectDetails.noUnits} onChange={handleProjectDetailsChange} className="p-2 rounded border border-gray-300" placeholder="No. of Units" />
+                <input type="text" name="totalFloorArea" value={formData.projectDetails.totalFloorArea} onChange={handleProjectDetailsChange} className="p-2 rounded border border-gray-300" placeholder="Total Floor Area (m²)" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">Date of Completion</label>
+                <input required type="date" name="dateCompletion" value={formData.projectDetails.dateCompletion} onChange={handleProjectDetailsChange} className="mt-1 p-2 rounded w-full" />
+              </div>
             </div>
           </div>
 
           {/* Section 5 - Signatures */}
           <div className="mt-12 pt-8 border-t-2 border-gray-300">
-            <h2 className="text-xl font-semibold text-gray-700 mb-6">5. Certification and Signatures</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-6">5. Certification & Signatures</h2>
             <div className="grid md:grid-cols-3 gap-8 items-start">
-              <div className="text-center">
-                <p className="mb-2">Submitted by (Owner / Permittee)</p>
-                <input name="ownerName" value={formData.signatures.ownerName} onChange={handleSignaturesChange} className="border border-gray-300 text-center w-full max-w-xs mx-auto p-1" placeholder="Owner name" required />
+              <div className="text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <p className="mb-2 font-medium">Submitted by (Owner / Permittee)</p>
+                <input name="ownerName" value={formData.signatures.ownerName} onChange={handleSignaturesChange} className="border border-gray-300 text-center w-full max-w-xs mx-auto p-1" placeholder="Owner full name" required />
                 <div className="mt-3 space-y-1">
                   <input name="ownerCtcNo" value={formData.signatures.ownerCtcNo} onChange={handleSignaturesChange} placeholder="CTC No." className="block w-full p-1 border border-gray-300 rounded" />
                   <input type="date" name="ownerCtcDate" value={formData.signatures.ownerCtcDate} onChange={handleSignaturesChange} className="block w-full p-1 border border-gray-300 rounded" />
@@ -565,14 +581,14 @@ const OccupancyApplication = () => {
                 </div>
               </div>
 
-              <div className="text-center">
-                <p className="mb-2">Attested by (Inspector)</p>
-                <input name="inspectorName" value={formData.signatures.inspectorName} onChange={handleSignaturesChange} className="border-b-2 text-center w-full max-w-xs mx-auto p-1" placeholder="Inspector name" required />
+              <div className="text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <p className="mb-2 font-medium">Attested by (Inspector)</p>
+                <input name="inspectorName" value={formData.signatures.inspectorName} onChange={handleSignaturesChange} className="border-b-2 text-center w-full max-w-xs mx-auto p-1" placeholder="Inspector full name" required />
               </div>
 
-              <div className="text-center">
-                <p className="mb-2">Prepared by (Architect / Civil Engineer)</p>
-                <input name="engineerName" value={formData.signatures.engineerName} onChange={handleSignaturesChange} className="border-b-2 text-center w-full max-w-xs mx-auto p-1" placeholder="Engineer name" required />
+              <div className="text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <p className="mb-2 font-medium">Prepared by (Architect / Civil Engineer)</p>
+                <input name="engineerName" value={formData.signatures.engineerName} onChange={handleSignaturesChange} className="border-b-2 text-center w-full max-w-xs mx-auto p-1" placeholder="Engineer full name" required />
                 <div className="mt-3 space-y-1 text-left max-w-sm mx-auto">
                   <input name="engineerPrcNo" value={formData.signatures.engineerPrcNo} onChange={handleSignaturesChange} placeholder="PRC No." className="block w-full p-1 border border-gray-300 rounded" />
                   <input type="date" name="engineerPrcValidity" value={formData.signatures.engineerPrcValidity} onChange={handleSignaturesChange} className="block w-full p-1 border border-gray-300 rounded" />
@@ -594,7 +610,7 @@ const OccupancyApplication = () => {
               </button>
             </div>
             {error && <p className="text-red-600 mt-3">{error}</p>}
-            </div>
+          </div>
         </form>
       )}
       </div>

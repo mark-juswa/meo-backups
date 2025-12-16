@@ -629,8 +629,8 @@ const BuildingApplication = () => {
 
               {/* Conditional: Reference Number for Renewal/Amendatory */}
               {(setupData.applicationType === 'renewal' || setupData.applicationType === 'amendatory') && (
-                <section className="p-6 bg-amber-50 border-2 border-amber-200 rounded-lg">
-                  <h2 className="text-lg sm:text-xl font-semibold mb-4 text-amber-800">3. Existing Permit Reference</h2>
+                <section className="p-6 bg-amber-50 border-2 border-amber-100 rounded-lg">
+                  <h2 className="text-lg sm:text-xl font-semibold mb-4 text-amber-800">Existing Permit Reference</h2>
                   <p className="text-sm text-gray-700 mb-4">
                     Enter the reference number of your existing building permit:
                   </p>
