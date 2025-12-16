@@ -18,7 +18,7 @@ const SuccessIcon = () => (
 );
 
 const BuildingApplication = () => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0); // START AT STEP 0
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
@@ -27,11 +27,20 @@ const BuildingApplication = () => {
   const { auth } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  // NEW: STEP 0 STATE - Application Setup
+  const [setupData, setSetupData] = useState({
+    projectComplexity: '', // 'simple' | 'complex'
+    applicationType: '', // 'new' | 'renewal' | 'amendatory'
+    existingPermitRef: '',
+    isSetupComplete: false
+  });
+
   // STATE
   const [box1, setBox1] = useState({
     owner: { lastName: '', firstName: '', middleInitial: '', tin: '' },
     enterprise: {
       formOfOwnership: '',
+      formOfOwnershipOther: '',
       projectTitle: '',
       address: { no: '', street: '', barangay: '', city: '', zip: '', telNo: '' },
     },
@@ -119,6 +128,71 @@ const BuildingApplication = () => {
   const handleBox3Change = (e) => setBox3((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   const handleBox4Change = (e) => setBox4((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
+  // NEW: STEP 0 HANDLERS
+  const handleSetupChange = (field, value) => {
+    setSetupData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // NEW: Fetch existing application for renewal/amendatory
+  const fetchExistingApplication = async () => {
+    if (!setupData.existingPermitRef.trim()) {
+      alert('Please enter the Building Permit Reference Number.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `/api/applications/track/${setupData.existingPermitRef}`,
+        { headers: { Authorization: `Bearer ${auth.accessToken}` }}
+      );
+      
+      const existing = response.data.application;
+      
+      // Prefill all state from existing application
+      if (existing.box1) setBox1(existing.box1);
+      if (existing.box2) setBox2(existing.box2);
+      if (existing.box3) setBox3(existing.box3);
+      if (existing.box4) setBox4(existing.box4);
+      
+      // Show appropriate message
+      if (setupData.applicationType === 'amendatory') {
+        alert('Application data loaded successfully.\n\nYou are filing an AMENDATORY application. Please update only the fields that have changed.');
+      } else {
+        alert('Renewal data loaded successfully.\n\nPlease review and update the information as needed.');
+      }
+      
+      // Move to Step 1
+      setCurrentStep(1);
+      setSetupData(prev => ({ ...prev, isSetupComplete: true }));
+    } catch (error) {
+      console.error('Lookup failed:', error);
+      alert(`Application not found: ${error.response?.data?.message || 'Please check the reference number and try again.'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // NEW: Proceed to form from Step 0
+  const proceedToForm = () => {
+    if (!setupData.projectComplexity) {
+      alert('Please select a project complexity.');
+      return;
+    }
+    if (!setupData.applicationType) {
+      alert('Please select an application type.');
+      return;
+    }
+
+    if (setupData.applicationType === 'new') {
+      // Start with empty form
+      setCurrentStep(1);
+      setSetupData(prev => ({ ...prev, isSetupComplete: true }));
+    } else {
+      // Must fetch existing data first
+      fetchExistingApplication();
+    }
+  };
  
   const validateStep1 = () => {
     const newErrors = {};
@@ -160,8 +234,17 @@ const BuildingApplication = () => {
   };
 
   const prevStep = () => {
-    if (currentStep > 1) setCurrentStep((s) => s - 1);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (currentStep === 1) {
+      // Going back to Step 0 - show confirmation
+      const confirmBack = window.confirm('Are you sure you want to go back to setup? Your form data will be preserved.');
+      if (confirmBack) {
+        setCurrentStep(0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } else if (currentStep > 1) {
+      setCurrentStep((s) => s - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
 
@@ -195,6 +278,10 @@ const BuildingApplication = () => {
         },
         enterprise: {
           ...box1.enterprise,
+          formOfOwnership:
+            box1.enterprise.formOfOwnership === 'Others'
+              ? box1.enterprise.formOfOwnershipOther
+              : box1.enterprise.formOfOwnership,
           address: {
             ...box1.enterprise.address,
             no: toNum(box1.enterprise.address.no), 
@@ -290,7 +377,12 @@ const BuildingApplication = () => {
       form.getTextField('owner_mi').setText(box1.owner.middleInitial || '');
       form.getTextField('owner_tin').setText(box1.owner.tin ? String(box1.owner.tin) : '');
 
-      form.getTextField('ent_form').setText(box1.enterprise.formOfOwnership || '');
+      form.getTextField('ent_form').setText(
+        box1.enterprise.formOfOwnership === 'Others'
+          ? box1.enterprise.formOfOwnershipOther || ''
+          : box1.enterprise.formOfOwnership || ''
+      );
+
       form.getTextField('ent_addr_no').setText(box1.enterprise.address.no ? String(box1.enterprise.address.no) : '');
       form.getTextField('ent_addr_street').setText(box1.enterprise.address.street || '');
       form.getTextField('ent_addr_brgy').setText(box1.enterprise.address.barangay || '');
@@ -415,6 +507,20 @@ const BuildingApplication = () => {
     }
   };
 
+  const SCOPE_OPTIONS = [
+  { value: 'new', label: 'NEW' },
+  { value: 'erection', label: 'ERECTION' },
+  { value: 'addition', label: 'ADDITION' },
+  { value: 'alteration', label: 'ALTERATION' },
+  { value: 'renovation', label: 'RENOVATION' },
+  { value: 'conversion', label: 'CONVERSION' },
+  { value: 'repair', label: 'REPAIR' },
+  { value: 'moving', label: 'MOVING' },
+  { value: 'raising', label: 'RAISING' },
+  { value: 'accessory', label: 'ACCESSORY' },
+  { value: 'others', label: 'OTHERS' }
+];
+
 
   const errorClass = (fieldName) => (errors[fieldName] ? 'border-red-500 border-2' : 'border-gray-300');
 
@@ -422,22 +528,177 @@ const BuildingApplication = () => {
     <div className="antialiased text-gray-800 bg-gray-100 min-h-screen">
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div id="main-form-content" className="max-w-5xl mx-auto bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-lg border border-gray-200">
-          <h1 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center">Official Building Permit Application Form</h1>
-          <p id="form-subtitle" className="text-sm sm:text-base text-gray-600 text-center mb-6 sm:mb-8">Please fill in all mandatory fields (Steps 1-2).</p>
+          <h1 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-center">
+            {currentStep === 0 ? 'Building Permit Application Setup' : 'Official Building Permit Application Form'}
+          </h1>
+          <p id="form-subtitle" className="text-sm sm:text-base text-gray-600 text-center mb-6 sm:mb-8">
+            {currentStep === 0 
+              ? 'Configure your application type before proceeding to the form.' 
+              : 'Please fill in all mandatory fields (Steps 1-2).'}
+          </p>
 
-          <div id="progress-indicator" className="flex items-center justify-between mb-8">
-            <div className="flex-1 text-center">
-              <div className={`w-8 h-8 md:w-10 md:h-10 mx-auto rounded-full flex items-center justify-center font-bold text-sm md:text-base ${currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>1</div>
-              <p className={`mt-2 text-xs font-medium ${currentStep >= 1 ? 'text-blue-600' : 'text-gray-600'}`}>Applicant & Project</p>
-            </div>
-            <div className="flex-1 h-1 bg-gray-200 mx-1 md:mx-4 rounded-full"></div>
-            <div className="flex-1 text-center">
-              <div className={`w-8 h-8 md:w-10 md:h-10 mx-auto rounded-full flex items-center justify-center font-bold text-sm md:text-base ${currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>2</div>
-              <p className={`mt-2 text-xs font-medium ${currentStep >= 2 ? 'text-blue-600' : 'text-gray-600'}`}>Authorization</p>
-            </div>
-          </div>
+          {/* STEP 0: APPLICATION SETUP */}
+          {currentStep === 0 && (
+            <div className="application-setup space-y-8">
+              {/* Project Complexity */}
+              <section>
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 text-blue-600">1. Project Complexity</h2>
+                <div className="space-y-3">
+                  <label className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all ${setupData.projectComplexity === 'simple' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:bg-gray-50'}`}>
+                    <input
+                      type="radio"
+                      name="complexity"
+                      value="simple"
+                      checked={setupData.projectComplexity === 'simple'}
+                      onChange={(e) => handleSetupChange('projectComplexity', e.target.value)}
+                      className="mt-1 mr-3 h-5 w-5 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <strong className="text-base sm:text-lg block mb-1">Simple</strong>
+                      <p className="text-sm text-gray-600">Residential homes, small repairs, minor alterations</p>
+                    </div>
+                  </label>
+                  <label className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all ${setupData.projectComplexity === 'complex' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:bg-gray-50'}`}>
+                    <input
+                      type="radio"
+                      name="complexity"
+                      value="complex"
+                      checked={setupData.projectComplexity === 'complex'}
+                      onChange={(e) => handleSetupChange('projectComplexity', e.target.value)}
+                      className="mt-1 mr-3 h-5 w-5 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <strong className="text-base sm:text-lg block mb-1">Complex</strong>
+                      <p className="text-sm text-gray-600">Commercial buildings, multi-story structures, major structural changes</p>
+                    </div>
+                  </label>
+                </div>
+              </section>
 
-          <form onSubmit={handleConfirmSubmit}>
+              {/* Application Type */}
+              <section>
+                <h2 className="text-lg sm:text-xl font-semibold mb-4 text-blue-600">2. Application Type</h2>
+                <div className="space-y-3">
+                  <label className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all ${setupData.applicationType === 'new' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:bg-gray-50'}`}>
+                    <input
+                      type="radio"
+                      name="applicationType"
+                      value="new"
+                      checked={setupData.applicationType === 'new'}
+                      onChange={(e) => handleSetupChange('applicationType', e.target.value)}
+                      className="mt-1 mr-3 h-5 w-5 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <strong className="text-base sm:text-lg block mb-1">New Application</strong>
+                      <p className="text-sm text-gray-600">First-time application for this project</p>
+                    </div>
+                  </label>
+                  <label className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all ${setupData.applicationType === 'renewal' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:bg-gray-50'}`}>
+                    <input
+                      type="radio"
+                      name="applicationType"
+                      value="renewal"
+                      checked={setupData.applicationType === 'renewal'}
+                      onChange={(e) => handleSetupChange('applicationType', e.target.value)}
+                      className="mt-1 mr-3 h-5 w-5 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <strong className="text-base sm:text-lg block mb-1">Renewal</strong>
+                      <p className="text-sm text-gray-600">Renew an expired or expiring building permit</p>
+                    </div>
+                  </label>
+                  <label className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all ${setupData.applicationType === 'amendatory' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:bg-gray-50'}`}>
+                    <input
+                      type="radio"
+                      name="applicationType"
+                      value="amendatory"
+                      checked={setupData.applicationType === 'amendatory'}
+                      onChange={(e) => handleSetupChange('applicationType', e.target.value)}
+                      className="mt-1 mr-3 h-5 w-5 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <strong className="text-base sm:text-lg block mb-1">Amendatory</strong>
+                      <p className="text-sm text-gray-600">Modify an existing approved building permit</p>
+                    </div>
+                  </label>
+                </div>
+              </section>
+
+              {/* Conditional: Reference Number for Renewal/Amendatory */}
+              {(setupData.applicationType === 'renewal' || setupData.applicationType === 'amendatory') && (
+                <section className="p-6 bg-amber-50 border-2 border-amber-200 rounded-lg">
+                  <h2 className="text-lg sm:text-xl font-semibold mb-4 text-amber-800">3. Existing Permit Reference</h2>
+                  <p className="text-sm text-gray-700 mb-4">
+                    Enter the reference number of your existing building permit:
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      placeholder="e.g., B-2301000001"
+                      value={setupData.existingPermitRef}
+                      onChange={(e) => handleSetupChange('existingPermitRef', e.target.value)}
+                      className="flex-1 px-4 py-2 text-sm sm:text-base border-2 border-amber-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2 italic">
+                    Your existing application data will be automatically loaded and prefilled.
+                  </p>
+                </section>
+              )}
+
+              {/* Continue Button */}
+              <div className="flex justify-center pt-4">
+                <button
+                  type="button"
+                  onClick={proceedToForm}
+                  disabled={!setupData.projectComplexity || !setupData.applicationType || loading}
+                  className="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold text-base disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-700 transition-all shadow-md hover:shadow-lg"
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Loading Application...
+                    </span>
+                  ) : 'Continue to Application Form'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Progress Indicator - Only show for Steps 1+ */}
+          {currentStep >= 1 && (
+            <div id="progress-indicator" className="flex items-center justify-between mb-8">
+              <div className="flex-1 text-center">
+                <div className={`w-8 h-8 md:w-10 md:h-10 mx-auto rounded-full flex items-center justify-center font-bold text-sm md:text-base ${currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>1</div>
+                <p className={`mt-2 text-xs font-medium ${currentStep >= 1 ? 'text-blue-600' : 'text-gray-600'}`}>Applicant & Project</p>
+              </div>
+              <div className="flex-1 h-1 bg-gray-200 mx-1 md:mx-4 rounded-full"></div>
+              <div className="flex-1 text-center">
+                <div className={`w-8 h-8 md:w-10 md:h-10 mx-auto rounded-full flex items-center justify-center font-bold text-sm md:text-base ${currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>2</div>
+                <p className={`mt-2 text-xs font-medium ${currentStep >= 2 ? 'text-blue-600' : 'text-gray-600'}`}>Authorization</p>
+              </div>
+            </div>
+          )}
+
+          {/* Application Type Badge - Show on all form steps */}
+          {currentStep >= 1 && setupData.applicationType && (
+            <div className="mb-6 flex justify-center">
+              <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${
+                setupData.applicationType === 'new' ? 'bg-green-100 text-green-800' :
+                setupData.applicationType === 'renewal' ? 'bg-blue-100 text-blue-800' :
+                'bg-orange-100 text-orange-800'
+              }`}>
+                {setupData.applicationType === 'new' && '🆕 New Application'}
+                {setupData.applicationType === 'renewal' && '🔄 Renewal Application'}
+                {setupData.applicationType === 'amendatory' && '✏️ Amendatory Application'}
+              </span>
+            </div>
+          )}
+
+          {currentStep >= 1 && (<form onSubmit={handleConfirmSubmit}>
             {/* BOX 1 */}
             <div id="form-section-1" className={currentStep === 1 ? 'mb-8' : 'hidden'}>
               <h2 className="text-lg sm:text-xl font-semibold mb-4 border-b pb-2 text-blue-600">1. Applicant, Project Location, and Scope (Box 1)</h2>
@@ -466,7 +727,41 @@ const BuildingApplication = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
                 <div className="sm:col-span-2 lg:col-span-1">
                   <label className="block text-xs font-medium text-gray-700 mb-1">FORM OF OWNERSHIP</label>
-                  <input type="text" name="formOfOwnership" value={box1.enterprise.formOfOwnership} onChange={handleEnterpriseChange} className="mt-1 block w-full px-3 py-2 text-sm sm:text-base rounded-md shadow-sm border border-gray-300" placeholder="e.g., Corporation" />
+                  <select
+                    name="formOfOwnership"
+                    value={box1.enterprise.formOfOwnership}
+                    onChange={handleEnterpriseChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select Form of Ownership</option>
+                    <option value="Individual/Owner">Individual / Owner</option>
+                    <option value="Sole Proprietorship">Sole Proprietorship</option>
+                    <option value="Partnership">Partnership</option>
+                    <option value="Corporation">Corporation</option>
+                    <option value="Cooperative">Cooperative</option>
+                    <option value="Government Agency">Government Agency</option>
+                    <option value="Others">Others</option>
+                  </select>
+
+                  {box1.enterprise.formOfOwnership === 'Others' && (
+                    <input
+                      type="text"
+                      placeholder="Specify other ownership"
+                      value={box1.enterprise.formOfOwnershipOther}
+                      onChange={(e) =>
+                        setBox1(prev => ({
+                          ...prev,
+                          enterprise: {
+                            ...prev.enterprise,
+                            formOfOwnershipOther: e.target.value // ✅ FIX
+                          }
+                        }))
+                      }
+                      className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  )}
+
+
                 </div>
                 <div className="sm:col-span-2 lg:col-span-1">
                   <label className="block text-xs font-medium text-gray-700 mb-1">PROJECT TITLE</label>
@@ -538,12 +833,19 @@ const BuildingApplication = () => {
 
               <h3 className="font-medium text-base sm:text-lg text-gray-700 mt-6 mb-3 border-t pt-4">Scope of Work</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm">
-                {['new', 'renovation', 'raising', 'erection', 'conversion', 'accessory', 'addition', 'repair', 'alteration', 'moving', 'others'].map((item) => (
-                  <label key={item} className="flex items-center p-2 rounded-md hover:bg-blue-50 cursor-pointer">
-                    <input type="checkbox" value={item} onChange={handleScopeChange} checked={box1.scopeOfWork.includes(item)} className="rounded text-blue-600 mr-2 flex-shrink-0" />
-                    <span className="truncate">{item.toUpperCase().replace('_', ' ')}</span>
+                {SCOPE_OPTIONS.map((item) => (
+                  <label key={item.value} className="flex items-center p-2 rounded-md hover:bg-blue-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      value={item.value}
+                      checked={box1.scopeOfWork.includes(item.value)}
+                      onChange={handleScopeChange}
+                      className="rounded text-blue-600 mr-2"
+                    />
+                    <span>{item.label}</span>
                   </label>
                 ))}
+
               </div>
 
               <h3 className="font-medium text-base sm:text-lg text-gray-700 mt-6 mb-3 border-t pt-4">Occupancy</h3>
@@ -557,7 +859,7 @@ const BuildingApplication = () => {
                   { value: 'group_f', label: 'GROUP F: INDUSTRIAL' },
                   { value: 'group_g', label: 'GROUP G: HAZARDOUS' },
                   { value: 'group_h_load_lt_1000', label: 'GROUP H (< 1000)' },
-                  { value: 'group_i_load', label: 'GROUP I (>= 1000)' },
+                  { value: 'group_i', label: 'GROUP I (>= 1000)' },
                   { value: 'group_j', label: 'GROUP J: AGRICULTURAL' },
                   { value: 'others', label: 'OTHERS' }
                 ].map((item) => (
@@ -726,10 +1028,11 @@ const BuildingApplication = () => {
               <button type="submit" disabled={loading} className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-green-600 text-white font-semibold rounded-lg text-sm sm:text-base ${currentStep === 2 ? 'block' : 'hidden'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>{loading ? 'Submitting...' : 'Confirm & Submit'}</button>
             </div>
           </form>
+        )}
         </div>
       </div>
 
-      {/* Confirmation Modal */}
+
       {showConfirmationModal && (
         <div id="confirmation-modal" className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
