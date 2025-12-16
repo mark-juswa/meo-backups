@@ -22,6 +22,13 @@ const OccupancyApplication = () => {
   const { auth } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const [currentStep, setCurrentStep] = useState(0);
+  const [setupData, setSetupData] = useState({
+    applicationKind: 'FULL', // FULL | PARTIAL
+    buildingPermitRef: '',
+    isSetupComplete: false,
+  });
+
   const [formData, setFormData] = useState({
     applicationKind: 'FULL', // FULL | PARTIAL (top checkboxes)
     buildingPermitReferenceNo: '', // For looking up the building application
@@ -112,9 +119,75 @@ const OccupancyApplication = () => {
     });
   };
 
-  const handleApplicationKind = (kind) => setFormData(prev => ({ ...prev, applicationKind: kind }));
+  const handleApplicationKind = (kind) => {
+    setSetupData(prev => ({ ...prev, applicationKind: kind }));
+    setFormData(prev => ({ ...prev, applicationKind: kind }));
+  };
 
-  const handleBuildingPermitRefChange = (e) => setFormData(prev => ({ ...prev, buildingPermitReferenceNo: e.target.value }));
+  const handleBuildingPermitRefChange = (e) => {
+    setSetupData(prev => ({ ...prev, buildingPermitRef: e.target.value }));
+    setFormData(prev => ({ ...prev, buildingPermitReferenceNo: e.target.value }));
+  };
+
+  // Step 0 handlers
+  const handleSetupChange = (field, value) => setSetupData(prev => ({ ...prev, [field]: value }));
+
+  const fetchAndPrefillFromBuildingPermit = async () => {
+    if (!setupData.buildingPermitRef.trim()) {
+      setError('Building permit reference number is required.');
+      return false;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(`/api/applications/track/${setupData.buildingPermitRef}`, {
+        headers: { Authorization: `Bearer ${auth.accessToken}` }
+      });
+      const app = res.data?.application;
+      if (app?.box1) {
+        // Prefill owner
+        setFormData(prev => ({
+          ...prev,
+          buildingPermitReferenceNo: setupData.buildingPermitRef,
+          applicationKind: setupData.applicationKind,
+          ownerDetails: {
+            ...prev.ownerDetails,
+            lastName: app.box1.owner?.lastName || prev.ownerDetails.lastName,
+            givenName: app.box1.owner?.firstName || prev.ownerDetails.givenName,
+            middleInitial: app.box1.owner?.middleInitial || prev.ownerDetails.middleInitial,
+            address: `${app.box1.enterprise?.address?.no ? app.box1.enterprise.address.no + ' ' : ''}${app.box1.enterprise?.address?.street || ''}, ${app.box1.enterprise?.address?.barangay || ''}, ${app.box1.enterprise?.address?.city || ''}`.trim(),
+            zip: app.box1.enterprise?.address?.zip || prev.ownerDetails.zip,
+            telNo: app.box1.enterprise?.address?.telNo || prev.ownerDetails.telNo,
+          },
+          projectDetails: {
+            ...prev.projectDetails,
+            projectName: app.box1.enterprise?.projectTitle || prev.projectDetails.projectName,
+            projectLocation: `${app.box1.location?.street || ''}, ${app.box1.location?.barangay || ''}, ${app.box1.location?.city || ''}`.trim(),
+            occupancyUse: app.box1.occupancy?.classified || prev.projectDetails.occupancyUse,
+          }
+        }));
+      }
+      return true;
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Building permit not found for the provided reference number.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const proceedToForm = async () => {
+    if (!setupData.buildingPermitRef.trim()) {
+      setError('Please enter your Building Permit Reference Number to continue.');
+      return;
+    }
+    const ok = await fetchAndPrefillFromBuildingPermit();
+    if (ok) {
+      setCurrentStep(1);
+      setSetupData(prev => ({ ...prev, isSetupComplete: true }));
+    }
+  };
 
   const closeConfirmationModal = () => {
     setShowConfirmationModal(false);
@@ -310,19 +383,69 @@ const OccupancyApplication = () => {
           <p className="text-md text-gray-500">Application for Certificate of Occupancy</p>
         </header>
 
-        <form className="space-y-8" onSubmit={handleSubmit}>
-          {/* top application kind */}
-          <div className="flex gap-6 items-center">
-            <label className="flex items-center space-x-2">
-              <input type="radio" name="appKind" checked={formData.applicationKind === 'FULL'} onChange={() => handleApplicationKind('FULL')} />
-              <span>FULL</span>
-            </label>
-            <label className="flex items-center space-x-2">
-              <input type="radio" name="appKind" checked={formData.applicationKind === 'PARTIAL'} onChange={() => handleApplicationKind('PARTIAL')} />
-              <span>PARTIAL</span>
-            </label>
+        {/* Step Indicator */}
+        {currentStep >= 0 && (
+          <div className="flex justify-center items-center gap-6 sm:gap-12 mb-6">
+            <div className={`w-8 h-8 md:w-10 md:h-10 mx-auto rounded-full flex items-center justify-center font-bold text-sm md:text-base ${currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>1</div>
+            <p className={`mt-2 text-xs font-medium ${currentStep >= 1 ? 'text-blue-600' : 'text-gray-600'}`}>Application Details</p>
+            <div className={`w-8 h-8 md:w-10 md:h-10 mx-auto rounded-full flex items-center justify-center font-bold text-sm md:text-base ${currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>2</div>
+            <p className={`mt-2 text-xs font-medium ${currentStep >= 2 ? 'text-blue-600' : 'text-gray-600'}`}>Certification</p>
           </div>
+        )}
 
+        {/* STEP 0: Setup */}
+        {currentStep === 0 && (
+          <div className="bg-white border rounded-xl p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Application Setup</h2>
+
+            <div className="mb-6">
+              <p className="text-sm text-gray-700 font-medium mb-2">Select Application Kind</p>
+              <div className="flex gap-6 items-center">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input type="radio" name="appKind" checked={setupData.applicationKind === 'FULL'} onChange={() => handleApplicationKind('FULL')} />
+                  <span>FULL</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input type="radio" name="appKind" checked={setupData.applicationKind === 'PARTIAL'} onChange={() => handleApplicationKind('PARTIAL')} />
+                  <span>PARTIAL</span>
+                </label>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                FULL means the entire building is ready for occupancy. PARTIAL is used for a portion or phase of the project.
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Building Permit Reference Number <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                value={setupData.buildingPermitRef}
+                onChange={(e) => handleSetupChange('buildingPermitRef', e.target.value)}
+                className="mt-1 block w-full p-2 border border-gray-300 rounded-lg"
+                placeholder="Enter your building permit reference number"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-2">We will use this to prefill your application details from your approved building permit.</p>
+            </div>
+
+            <div className="flex justify-end">
+              <button type="button" onClick={proceedToForm} disabled={loading} className={`px-6 py-2 rounded-lg text-white ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                {loading ? 'Loading...' : 'Proceed to Form'}
+              </button>
+            </div>
+            {error && <p className="text-red-600 mt-3">{error}</p>}
+          </div>
+        )}
+
+        {/* STEP 1+: Main Form */}
+        {currentStep >= 1 && (
+          <form className="space-y-8" onSubmit={handleSubmit}>
+            {/* Badge */}
+            <div className="mb-2 flex justify-center">
+              <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${setupData.applicationKind === 'FULL' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>
+                {setupData.applicationKind} Occupancy Application
+              </span>
+            </div>
           {/* Section 1 - Permit info */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-700 border-b-2 border-indigo-100 pb-2">1. Permit Information</h2>
@@ -346,10 +469,6 @@ const OccupancyApplication = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
 
               {/* Section 1 - Permit info 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Building Permit No.:</label>
-                <input type="text" name="buildingPermitNo" value={formData.permitInfo.buildingPermitNo} onChange={handlePermitInfoChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-lg" />
-              </div>
             */}
 
               <div>
