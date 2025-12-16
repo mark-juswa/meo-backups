@@ -594,7 +594,6 @@ const OccupancyApplication = () => {
               </button>
             </div>
             {error && <p className="text-red-600 mt-3">{error}</p>}
-          </div>
         </form>
       </div>
 
