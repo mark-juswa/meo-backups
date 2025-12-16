@@ -690,8 +690,8 @@ const BuildingApplication = () => {
           {currentStep >= 1 && setupData.applicationType && (
             <div className="mb-6 flex justify-center">
               <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${
-                setupData.applicationType === 'new' ? 'bg-green-100 text-green-800' :
-                setupData.applicationType === 'renewal' ? 'bg-blue-100 text-blue-800' :
+                setupData.applicationType === 'new' ? 'text-black' :
+                setupData.applicationType === 'renewal' ? ' text-black' :
                 'bg-orange-100 text-orange-800'
               }`}>
                 {setupData.applicationType === 'new' && 'New Application'}

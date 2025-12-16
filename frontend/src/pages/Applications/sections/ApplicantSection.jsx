@@ -28,7 +28,6 @@ const ApplicantSection = ({ box1, setBox1, errors = {} }) => {
   return (
     <div className="space-y-6">
       <SectionHeader
-        icon="👤"
         title="Who Are You?"
         description="Let us know who is responsible for this construction project"
         helpText="We need your personal information to identify you as the applicant or property owner."

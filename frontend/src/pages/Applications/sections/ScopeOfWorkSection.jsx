@@ -54,8 +54,7 @@ const ScopeOfWorkSection = ({ box1, setBox1, errors = {} }) => {
         </div>
       )}
 
-      <FieldGroup title="em
-      Primary Construction Work">
+      <FieldGroup title="Primary Construction Work">
         <p className="text-sm text-gray-600 mb-3">
           Select the main type of construction:
         </p>
