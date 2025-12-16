@@ -14,7 +14,7 @@ const SectionHeader = ({ icon, title, description, helpText }) => {
         <p className="text-sm text-gray-600 mb-2">{description}</p>
       )}
       {helpText && (
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+        <div className="bg-blue-50 border-blue-400 p-3 rounded">
           <p className="text-sm text-blue-800">{helpText}</p>
         </div>
       )}

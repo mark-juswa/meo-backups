@@ -442,7 +442,7 @@ const OccupancyApplication = () => {
           <form className="space-y-8" onSubmit={handleSubmit}>
             {/* Badge */}
             <div className="mb-2 flex justify-center">
-              <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${setupData.applicationKind === 'FULL' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>
+              <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${setupData.applicationKind === 'FULL' ? 'text-black' : 'text-black'}`}>
                 {setupData.applicationKind} Occupancy Application
               </span>
             </div>
