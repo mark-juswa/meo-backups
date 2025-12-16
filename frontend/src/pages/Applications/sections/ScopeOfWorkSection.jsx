@@ -43,7 +43,6 @@ const ScopeOfWorkSection = ({ box1, setBox1, errors = {} }) => {
   return (
     <div className="space-y-6">
       <SectionHeader
-        icon="🏗️"
         title="What Kind of Work Are You Doing?"
         description="Select all types of construction work that apply to your project"
         helpText="You can select multiple options if your project involves different types of work. For example, you might be doing both 'Addition' and 'Renovation'."
@@ -55,7 +54,8 @@ const ScopeOfWorkSection = ({ box1, setBox1, errors = {} }) => {
         </div>
       )}
 
-      <FieldGroup title="🏗️ Primary Construction Work">
+      <FieldGroup title="em
+      Primary Construction Work">
         <p className="text-sm text-gray-600 mb-3">
           Select the main type of construction:
         </p>
@@ -81,7 +81,7 @@ const ScopeOfWorkSection = ({ box1, setBox1, errors = {} }) => {
         </div>
       </FieldGroup>
 
-      <FieldGroup title="🔧 Structural Changes">
+      <FieldGroup title="Structural Changes">
         <p className="text-sm text-gray-600 mb-3">
           Making changes to an existing building? Select what applies:
         </p>
@@ -107,7 +107,7 @@ const ScopeOfWorkSection = ({ box1, setBox1, errors = {} }) => {
         </div>
       </FieldGroup>
 
-      <FieldGroup title="📦 Other Work Types">
+      <FieldGroup title="Other Work Types">
         <p className="text-sm text-gray-600 mb-3">
           Additional types of construction work:
         </p>
@@ -133,8 +133,8 @@ const ScopeOfWorkSection = ({ box1, setBox1, errors = {} }) => {
         </div>
       </FieldGroup>
 
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <p className="text-sm text-blue-800">
+      <div className="bg-yellow-50 p-4 rounded-lg">
+        <p className="text-sm text-yellow-800">
           <strong>Note:</strong> The type of work you select determines which building codes and inspection requirements apply to your project.
         </p>
       </div>

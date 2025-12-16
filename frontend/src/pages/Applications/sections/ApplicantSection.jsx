@@ -94,7 +94,7 @@ const ApplicantSection = ({ box1, setBox1, errors = {} }) => {
                 className="mt-1 mr-3"
               />
               <div>
-                <div className="font-medium text-gray-800">🏠 Individual / Owner</div>
+                <div className="font-medium text-gray-800">Individual / Owner</div>
                 <div className="text-sm text-gray-600">You personally own the property or are the primary applicant</div>
               </div>
             </label>
@@ -109,7 +109,7 @@ const ApplicantSection = ({ box1, setBox1, errors = {} }) => {
                 className="mt-1 mr-3"
               />
               <div>
-                <div className="font-medium text-gray-800">🏢 Corporation</div>
+                <div className="font-medium text-gray-800">Corporation</div>
                 <div className="text-sm text-gray-600">A registered business corporation</div>
               </div>
             </label>
@@ -124,7 +124,7 @@ const ApplicantSection = ({ box1, setBox1, errors = {} }) => {
                 className="mt-1 mr-3"
               />
               <div>
-                <div className="font-medium text-gray-800">🤝 Partnership</div>
+                <div className="font-medium text-gray-800">Partnership</div>
                 <div className="text-sm text-gray-600">A business partnership with multiple partners</div>
               </div>
             </label>
@@ -139,7 +139,7 @@ const ApplicantSection = ({ box1, setBox1, errors = {} }) => {
                 className="mt-1 mr-3"
               />
               <div>
-                <div className="font-medium text-gray-800">👥 Cooperative</div>
+                <div className="font-medium text-gray-800">Cooperative</div>
                 <div className="text-sm text-gray-600">A registered cooperative organization</div>
               </div>
             </label>
@@ -154,7 +154,7 @@ const ApplicantSection = ({ box1, setBox1, errors = {} }) => {
                 className="mt-1 mr-3"
               />
               <div>
-                <div className="font-medium text-gray-800">📝 Other</div>
+                <div className="font-medium text-gray-800">Other</div>
                 <div className="text-sm text-gray-600">Specify your organization type</div>
               </div>
             </label>

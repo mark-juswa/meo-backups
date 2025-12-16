@@ -19,28 +19,28 @@ const OccupancySection = ({ box1, setBox1, errors = {} }) => {
 
   const occupancyGroups = [
     {
-      category: '🏠 RESIDENTIAL & HOUSING',
+      category: 'RESIDENTIAL & HOUSING',
       options: [
         { value: 'group_a', label: 'Group A: Residential Dwelling', description: 'Single-family homes, multi-family homes, apartments, condominiums' },
         { value: 'group_b', label: 'Group B: Residential Hotel/Transient', description: 'Hotels, motels, boarding houses, dormitories' }
       ]
     },
     {
-      category: '🏫 COMMUNITY & PUBLIC SERVICES',
+      category: 'COMMUNITY & PUBLIC SERVICES',
       options: [
         { value: 'group_c', label: 'Group C: Educational', description: 'Schools, colleges, universities, daycare centers, training facilities' },
         { value: 'group_d', label: 'Group D: Institutional', description: 'Hospitals, nursing homes, jails, rehabilitation centers' }
       ]
     },
     {
-      category: '🏢 BUSINESS & COMMERCE',
+      category: 'BUSINESS & COMMERCE',
       options: [
         { value: 'group_e', label: 'Group E: Commercial/Business', description: 'Offices, shops, restaurants, malls, markets, showrooms' },
         { value: 'group_f', label: 'Group F: Industrial/Manufacturing', description: 'Factories, warehouses, assembly plants, processing facilities' }
       ]
     },
     {
-      category: '⚠️ SPECIALIZED FACILITIES',
+      category: 'SPECIALIZED FACILITIES',
       options: [
         { value: 'group_g', label: 'Group G: Hazardous Operations', description: 'Facilities handling flammable, combustible, or dangerous materials' },
         { value: 'group_h', label: 'Group H: Assembly (< 1000 capacity)', description: 'Churches, theaters, small gyms, community halls, restaurants with entertainment' },
@@ -53,7 +53,6 @@ const OccupancySection = ({ box1, setBox1, errors = {} }) => {
   return (
     <div className="space-y-6">
       <SectionHeader
-        icon="🏢"
         title="How Will the Building Be Used?"
         description="Select the primary purpose or use of your building"
         helpText="This classification determines the safety requirements, building codes, and inspection procedures for your project. Select the option that best describes the main use of your building."
@@ -102,7 +101,7 @@ const OccupancySection = ({ box1, setBox1, errors = {} }) => {
             className="mt-1 mr-3 text-blue-600"
           />
           <div className="flex-1">
-            <div className="font-medium text-gray-800">📝 Other (Please Specify)</div>
+            <div className="font-medium text-gray-800">Other (Please Specify)</div>
             <div className="text-sm text-gray-600">If your building use doesn't fit the categories above</div>
           </div>
         </label>

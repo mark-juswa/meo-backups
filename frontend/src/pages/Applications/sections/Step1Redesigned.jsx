@@ -15,11 +15,11 @@ const Step1Redesigned = ({ box1, setBox1, errors }) => {
   const [activeSection, setActiveSection] = useState('applicant');
 
   const sections = [
-    { id: 'applicant', label: 'Who Are You?', icon: '👤' },
-    { id: 'location', label: 'Project Location', icon: '📍' },
-    { id: 'scope', label: 'Type of Work', icon: '🏗️' },
-    { id: 'occupancy', label: 'Building Use', icon: '🏢' },
-    { id: 'details', label: 'Project Size & Timeline', icon: '💰' }
+    { id: 'applicant', label: 'Who Are You?'},
+    { id: 'location', label: 'Project Location'},
+    { id: 'scope', label: 'Type of Work'},
+    { id: 'occupancy', label: 'Building Use'},
+    { id: 'details', label: 'Project Size & Timeline'}
   ];
 
   const renderSection = () => {
@@ -56,13 +56,12 @@ const Step1Redesigned = ({ box1, setBox1, errors }) => {
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
               }`}
             >
-              <span className="text-lg">{section.icon}</span>
               <span className="hidden sm:inline">{section.label}</span>
             </button>
           ))}
         </div>
         <p className="text-xs text-gray-500 mt-3">
-          💡 You can navigate between sections freely. All information is saved as you type.
+          You can navigate between sections freely. All information is saved as you type.
         </p>
       </div>
 
@@ -85,7 +84,7 @@ const Step1Redesigned = ({ box1, setBox1, errors }) => {
           disabled={activeSection === 'applicant'}
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          ← Previous Section
+          Previous
         </button>
 
         <button
@@ -100,7 +99,7 @@ const Step1Redesigned = ({ box1, setBox1, errors }) => {
           disabled={activeSection === 'details'}
           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Next Section →
+          Next
         </button>
       </div>
     </div>

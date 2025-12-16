@@ -20,7 +20,6 @@ const ProjectDetailsSection = ({ box1, setBox1, errors = {} }) => {
   return (
     <div className="space-y-6">
       <SectionHeader
-        icon="💰"
         title="Project Size & Timeline"
         description="Tell us about the scale and schedule of your construction project"
         helpText="This information helps us estimate permit fees and plan inspection schedules. Don't worry - you can update dates later if your schedule changes."
@@ -90,14 +89,14 @@ const ProjectDetailsSection = ({ box1, setBox1, errors = {} }) => {
           />
         </div>
 
-        <div className="bg-blue-50 p-3 rounded-lg mt-3">
-          <p className="text-xs text-blue-800">
+        <div className="bg-yellow-50 p-3 rounded-lg mt-3">
+          <p className="text-xs text-yellow-800">
             <strong>Note:</strong> Floor area includes all levels. For a 2-story house with 60m² per floor, total floor area = 120m².
           </p>
         </div>
       </FieldGroup>
 
-      <FieldGroup title="📅 Construction Timeline">
+      <FieldGroup title="Construction Timeline">
         <p className="text-sm text-gray-600 mb-3">
           When do you plan to start and finish construction?
         </p>

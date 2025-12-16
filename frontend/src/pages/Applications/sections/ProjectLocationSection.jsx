@@ -39,7 +39,6 @@ const ProjectLocationSection = ({ box1, setBox1, errors = {} }) => {
   return (
     <div className="space-y-6">
       <SectionHeader
-        icon="📍"
         title="Where Is Your Project?"
         description="Tell us the exact location of your construction project"
         helpText="Accurate location information helps us process your permit faster and ensures proper site inspections."
