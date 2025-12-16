@@ -1,17 +1,4 @@
-// SENDGRID EMAIL SERVICE USING HTTP API (not SMTP)
-// Render blocks all SMTP ports, so we use SendGrid's HTTP API instead
-// SendGrid is more reliable on cloud platforms and has a free tier (100 emails/day)
-
 import sgMail from '@sendgrid/mail';
-
-// SendGrid HTTP API Configuration
-// To use this:
-// 1. Sign up at https://sendgrid.com (free tier)
-// 2. Verify sender email
-// 3. Create an API key
-// 4. Add to Render environment variables:
-//    SENDGRID_API_KEY=your_api_key
-//    SENDGRID_FROM_EMAIL=your-verified-sender@yourdomain.com
 
 export const sendVerificationEmail = async (to, token) => {
   try {

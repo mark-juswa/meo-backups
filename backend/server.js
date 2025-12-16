@@ -36,7 +36,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
-      "https://meo-backup.onrender.com"
+      "https://meo-services.onrender.com"
     ],
     credentials: true,
   })
