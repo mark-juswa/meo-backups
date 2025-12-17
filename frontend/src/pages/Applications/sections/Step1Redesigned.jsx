@@ -10,9 +10,11 @@ import ProjectDetailsSection from './ProjectDetailsSection';
  * Replaces the old Box 1 form layout
  * Maintains 100% compatibility with existing state structure
  */
-const Step1Redesigned = ({ box1, setBox1, errors }) => {
+const Step1Redesigned = ({ box1, setBox1, errors, activeSection: controlledActiveSection, setActiveSection: setControlledActiveSection, showQuickNav = true }) => {
   // Track which sub-section is currently active (for progressive disclosure)
-  const [activeSection, setActiveSection] = useState('applicant');
+  const [uncontrolledActive, setUncontrolledActive] = useState('applicant');
+  const activeSection = controlledActiveSection ?? uncontrolledActive;
+  const setActiveSection = setControlledActiveSection ?? setUncontrolledActive;
 
   const sections = [
     { id: 'applicant', label: 'Who Are You?'},
@@ -70,38 +72,39 @@ const Step1Redesigned = ({ box1, setBox1, errors }) => {
         {renderSection()}
       </div>
 
-      {/* Quick Navigation Buttons */}
-      <div className="flex justify-between mt-6">
-        <button
-          type="button"
-          onClick={() => {
-            const currentIndex = sections.findIndex(s => s.id === activeSection);
-            if (currentIndex > 0) {
-              setActiveSection(sections[currentIndex - 1].id);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-          }}
-          disabled={activeSection === 'applicant'}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Previous
-        </button>
+      {showQuickNav && (
+        <div className="flex justify-between mt-6">
+          <button
+            type="button"
+            onClick={() => {
+              const currentIndex = sections.findIndex(s => s.id === activeSection);
+              if (currentIndex > 0) {
+                setActiveSection(sections[currentIndex - 1].id);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+            disabled={activeSection === 'applicant'}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            const currentIndex = sections.findIndex(s => s.id === activeSection);
-            if (currentIndex < sections.length - 1) {
-              setActiveSection(sections[currentIndex + 1].id);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-          }}
-          disabled={activeSection === 'details'}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Next
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => {
+              const currentIndex = sections.findIndex(s => s.id === activeSection);
+              if (currentIndex < sections.length - 1) {
+                setActiveSection(sections[currentIndex + 1].id);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+            disabled={activeSection === 'details'}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

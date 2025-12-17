@@ -23,6 +23,7 @@ const SuccessIcon = () => (
 const BuildingApplication = () => {
   const [currentStep, setCurrentStep] = useState(0); // START AT STEP 0
   const [errors, setErrors] = useState({});
+  const [step1ActiveSection, setStep1ActiveSection] = useState('applicant');
   const [loading, setLoading] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -225,13 +226,25 @@ const BuildingApplication = () => {
 
   const nextStep = () => {
     let newErrors = {};
-    if (currentStep === 1) newErrors = validateStep1();
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      alert(`Action Blocked: Please fill out ALL required fields in Step ${currentStep} to proceed.`);
-    } else {
+    if (currentStep === 1) {
+      const order = ['applicant', 'location', 'scope', 'occupancy', 'details'];
+      const idx = order.indexOf(step1ActiveSection);
+      if (idx < order.length - 1) {
+        setStep1ActiveSection(order[idx + 1]);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      // last tab -> validate whole Step 1 before moving to step 2
+      newErrors = validateStep1();
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        alert('Action Blocked: Please fill out ALL required fields in Step 1 to proceed.');
+        return;
+      }
       setErrors({});
+      setCurrentStep(2);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
       if (currentStep < 2) setCurrentStep((s) => s + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -239,11 +252,17 @@ const BuildingApplication = () => {
 
   const prevStep = () => {
     if (currentStep === 1) {
-      // Going back to Step 0 - show confirmation
-      const confirmBack = window.confirm('Are you sure you want to go back to setup? Your form data will be preserved.');
-      if (confirmBack) {
-        setCurrentStep(0);
+      const order = ['applicant', 'location', 'scope', 'occupancy', 'details'];
+      const idx = order.indexOf(step1ActiveSection);
+      if (idx > 0) {
+        setStep1ActiveSection(order[idx - 1]);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        const confirmBack = window.confirm('Are you sure you want to go back to setup? Your form data will be preserved.');
+        if (confirmBack) {
+          setCurrentStep(0);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       }
     } else if (currentStep > 1) {
       setCurrentStep((s) => s - 1);
@@ -706,7 +725,7 @@ const BuildingApplication = () => {
             <form onSubmit={handleConfirmSubmit}>
             {/* BOX 1 - REDESIGNED */}
             <div id="form-section-1" className={currentStep === 1 ? 'mb-8' : 'hidden'}>
-              <Step1Redesigned box1={box1} setBox1={setBox1} errors={errors} />
+              <Step1Redesigned box1={box1} setBox1={setBox1} errors={errors} activeSection={step1ActiveSection} setActiveSection={setStep1ActiveSection} showQuickNav={false} />
             </div>
 
             {/* BOX 2, 3, 4 */}
