@@ -1,13 +1,14 @@
 import React from 'react';
 
-const CertificationSignaturesSection = ({ formData, handleSignaturesChange, downloadFormAsPdf, onSubmit, loading, error, hideActions = false }) => {
+const CertificationSignaturesSection = ({ formData, errors = {}, handleSignaturesChange, downloadFormAsPdf, onSubmit, loading, error, hideActions = false }) => {
   return (
     <section className="mt-12 pt-8 border-t-2 border-gray-300">
       <h2 className="text-xl font-semibold text-gray-800 mb-6">Certification & Signatures</h2>
       <div className="grid md:grid-cols-3 gap-8 items-start">
         <div className="text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
           <p className="mb-2 font-medium">Submitted by (Owner / Permittee)</p>
-          <input name="ownerName" value={formData.signatures.ownerName} onChange={handleSignaturesChange} className="border border-gray-300 text-center w-full max-w-xs mx-auto p-1" placeholder="Owner full name" />
+          <input name="ownerName" value={formData.signatures.ownerName} onChange={handleSignaturesChange} className={`border text-center w-full max-w-xs mx-auto p-1 ${errors['signatures.ownerName'] ? 'border-red-500' : 'border-gray-300'}`} placeholder="Owner full name" />
+          {errors['signatures.ownerName'] && <p className="text-xs text-red-600 mt-1">{errors['signatures.ownerName']}</p>}
           <div className="mt-3 space-y-1">
             <input name="ownerCtcNo" value={formData.signatures.ownerCtcNo} onChange={handleSignaturesChange} placeholder="CTC No." className="block w-full p-1 border border-gray-300 rounded" />
             <input type="date" name="ownerCtcDate" value={formData.signatures.ownerCtcDate} onChange={handleSignaturesChange} className="block w-full p-1 border border-gray-300 rounded" />
@@ -17,12 +18,14 @@ const CertificationSignaturesSection = ({ formData, handleSignaturesChange, down
 
         <div className="text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
           <p className="mb-2 font-medium">Attested by (Inspector)</p>
-          <input name="inspectorName" value={formData.signatures.inspectorName} onChange={handleSignaturesChange} className="border-b-2 text-center w-full max-w-xs mx-auto p-1" placeholder="Inspector full name" required />
+          <input name="inspectorName" value={formData.signatures.inspectorName} onChange={handleSignaturesChange} className={`border-b-2 text-center w-full max-w-xs mx-auto p-1 ${errors['signatures.inspectorName'] ? 'border-red-500' : 'border-gray-300'}`} placeholder="Inspector full name" />
+          {errors['signatures.inspectorName'] && <p className="text-xs text-red-600 mt-1">{errors['signatures.inspectorName']}</p>}
         </div>
 
         <div className="text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
           <p className="mb-2 font-medium">Prepared by (Architect / Civil Engineer)</p>
-          <input name="engineerName" value={formData.signatures.engineerName} onChange={handleSignaturesChange} className="border-b-2 text-center w-full max-w-xs mx-auto p-1" placeholder="Engineer full name" />
+          <input name="engineerName" value={formData.signatures.engineerName} onChange={handleSignaturesChange} className={`border-b-2 text-center w-full max-w-xs mx-auto p-1 ${errors['signatures.engineerName'] ? 'border-red-500' : 'border-gray-300'}`} placeholder="Engineer full name" />
+          {errors['signatures.engineerName'] && <p className="text-xs text-red-600 mt-1">{errors['signatures.engineerName']}</p>}
           <div className="mt-3 space-y-1 text-left max-w-sm mx-auto">
             <input name="engineerPrcNo" value={formData.signatures.engineerPrcNo} onChange={handleSignaturesChange} placeholder="PRC No." className="block w-full p-1 border border-gray-300 rounded" />
             <input type="date" name="engineerPrcValidity" value={formData.signatures.engineerPrcValidity} onChange={handleSignaturesChange} className="block w-full p-1 border border-gray-300 rounded" />

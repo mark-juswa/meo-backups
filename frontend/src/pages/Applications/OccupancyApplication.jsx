@@ -84,6 +84,7 @@ const OccupancyApplication = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [submissionData, setSubmissionData] = useState(null);
@@ -215,66 +216,82 @@ const OccupancyApplication = () => {
     navigate('/?status=occupancy_submitted');
   };
 
-  const validateForm = () => {
+  const validateAllStep1 = () => {
+    const errs = {};
+    let firstTab = null;
+
     // Step 1: Permit Info
     if (!formData.buildingPermitReferenceNo?.trim()) {
-      return { valid: false, step: 1, tab: 'permitInfo', message: 'Building permit reference number is required.' };
+      errs['buildingPermitReferenceNo'] = 'Building permit reference number is required.';
+      firstTab ??= 'permitInfo';
     }
     if (!formData.permitInfo.buildingPermitDate) {
-      return { valid: false, step: 1, tab: 'permitInfo', message: 'Building permit date is required.' };
+      errs['permitInfo.buildingPermitDate'] = 'Building permit date is required.';
+      firstTab ??= 'permitInfo';
     }
     if (!formData.permitInfo.fsecNo?.trim()) {
-      return { valid: false, step: 1, tab: 'permitInfo', message: 'FSEC No. is required.' };
+      errs['permitInfo.fsecNo'] = 'FSEC No. is required.';
+      firstTab ??= 'permitInfo';
     }
     if (!formData.permitInfo.fsecDate) {
-      return { valid: false, step: 1, tab: 'permitInfo', message: 'FSEC Date is required.' };
+      errs['permitInfo.fsecDate'] = 'FSEC Date is required.';
+      firstTab ??= 'permitInfo';
     }
 
     // Step 1: Project Details
     if (!formData.projectDetails.projectName?.trim()) {
-      return { valid: false, step: 1, tab: 'projectDetails', message: 'Project name is required.' };
+      errs['projectDetails.projectName'] = 'Project name is required.';
+      firstTab ??= 'projectDetails';
     }
     if (!formData.projectDetails.projectLocation?.trim()) {
-      return { valid: false, step: 1, tab: 'projectDetails', message: 'Project location is required.' };
+      errs['projectDetails.projectLocation'] = 'Project location is required.';
+      firstTab ??= 'projectDetails';
     }
     if (!formData.projectDetails.occupancyUse?.trim()) {
-      return { valid: false, step: 1, tab: 'projectDetails', message: 'Use / Character of Occupancy is required.' };
+      errs['projectDetails.occupancyUse'] = 'Use / Character of Occupancy is required.';
+      firstTab ??= 'projectDetails';
     }
     if (!formData.projectDetails.noStoreys?.toString().trim()) {
-      return { valid: false, step: 1, tab: 'projectDetails', message: 'No. of storeys is required.' };
+      errs['projectDetails.noStoreys'] = 'No. of storeys is required.';
+      firstTab ??= 'projectDetails';
     }
     if (!formData.projectDetails.dateCompletion) {
-      return { valid: false, step: 1, tab: 'projectDetails', message: 'Date of completion is required.' };
+      errs['projectDetails.dateCompletion'] = 'Date of completion is required.';
+      firstTab ??= 'projectDetails';
     }
 
     // Step 1: Certification & Signatures
     if (!formData.signatures.ownerName?.trim()) {
-      return { valid: false, step: 1, tab: 'certification', message: 'Owner name is required.' };
+      errs['signatures.ownerName'] = 'Owner name is required.';
+      firstTab ??= 'certification';
     }
     if (!formData.signatures.inspectorName?.trim()) {
-      return { valid: false, step: 1, tab: 'certification', message: 'Inspector name is required.' };
+      errs['signatures.inspectorName'] = 'Inspector name is required.';
+      firstTab ??= 'certification';
     }
     if (!formData.signatures.engineerName?.trim()) {
-      return { valid: false, step: 1, tab: 'certification', message: 'Engineer name is required.' };
+      errs['signatures.engineerName'] = 'Engineer name is required.';
+      firstTab ??= 'certification';
     }
 
-    // All good -> Step 2 can submit
-    return { valid: true };
+    const valid = Object.keys(errs).length === 0;
+    return { valid, errors: errs, firstTab };
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Custom validation so hidden required fields don't block submission
-    const check = validateForm();
-    if (!check.valid) {
-      setError(check.message);
-      setCurrentStep(check.step);
-      if (check.tab) setActiveTab(check.tab);
-      // Scroll to top so user sees the error
+    const { valid, errors: errs, firstTab } = validateAllStep1();
+    if (!valid) {
+      setErrors(errs);
+      setError('Please correct the highlighted fields.');
+      setCurrentStep(1);
+      if (firstTab) setActiveTab(firstTab);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+    setErrors({});
 
     setLoading(true);
     setError(null);
@@ -437,7 +454,7 @@ const OccupancyApplication = () => {
   };
 
   // error highlight helper (keeps your style pattern similar)
-  const errorClass = (flag) => (flag ? 'border-red-500 border-2' : 'border-gray-300');
+  const errorClass = (flag) => (flag ? 'border-red-500 border-2' : 'border-gray-300'); // legacy helper; sections now use errors map
 
   // Local helper components for guided address selection (do not alter payload keys)
   const useOwnerAddrState = (inputValue) => {
@@ -696,6 +713,7 @@ const OccupancyApplication = () => {
               {activeTab === 'permitInfo' && (
                 <PermitInformationSection
                   formData={formData}
+                  errors={errors}
                   handleBuildingPermitRefChange={handleBuildingPermitRefChange}
                   handlePermitInfoChange={handlePermitInfoChange}
                 />
@@ -704,6 +722,7 @@ const OccupancyApplication = () => {
               {activeTab === 'ownerPermittee' && (
                 <OwnerPermitteeSection
                   formData={formData}
+                  errors={errors}
                   setFormData={setFormData}
                   handleOwnerDetailsChange={handleOwnerDetailsChange}
                 />
@@ -712,6 +731,7 @@ const OccupancyApplication = () => {
               {activeTab === 'requirements' && (
                 <RequirementsSection
                   formData={formData}
+                  errors={errors}
                   handleRequirementsChange={handleRequirementsChange}
                   handleOtherDocsChange={handleOtherDocsChange}
                 />
@@ -720,6 +740,7 @@ const OccupancyApplication = () => {
               {activeTab === 'projectDetails' && (
                 <ProjectDetailsSection
                   formData={formData}
+                  errors={errors}
                   setFormData={setFormData}
                   handleProjectDetailsChange={handleProjectDetailsChange}
                 />
@@ -728,6 +749,7 @@ const OccupancyApplication = () => {
               {activeTab === 'certification' && (
                 <CertificationSignaturesSection
                   formData={formData}
+                  errors={errors}
                   handleSignaturesChange={handleSignaturesChange}
                   downloadFormAsPdf={downloadFormAsPdf}
                   loading={loading}
@@ -739,9 +761,10 @@ const OccupancyApplication = () => {
 
             {/* STEP 2: Review / Submit */}
             <div className={currentStep === 2 ? 'block' : 'hidden'}>
-              
+
               <CertificationSignaturesSection
                 formData={formData}
+                errors={errors}
                 handleSignaturesChange={handleSignaturesChange}
                 downloadFormAsPdf={downloadFormAsPdf}
                 loading={loading}
@@ -772,8 +795,21 @@ const OccupancyApplication = () => {
                 onClick={() => {
                   if (currentStep === 1) {
                     const idx = tabs.findIndex(t => t.id === activeTab);
-                    if (idx < tabs.length - 1) setActiveTab(tabs[idx + 1].id);
-                    else setCurrentStep(2);
+                    if (idx < tabs.length - 1) {
+                      setActiveTab(tabs[idx + 1].id);
+                    } else {
+                      // trying to proceed to Step 2 -> validate all required first
+                      const { valid, errors: errs, firstTab } = validateAllStep1();
+                      if (!valid) {
+                        setErrors(errs);
+                        setError('Please correct the highlighted fields.');
+                        if (firstTab) setActiveTab(firstTab);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        return;
+                      }
+                      setErrors({});
+                      setCurrentStep(2);
+                    }
                   } else if (currentStep < 2) {
                     setCurrentStep(s => Math.min(2, s + 1));
                   }
@@ -792,7 +828,7 @@ const OccupancyApplication = () => {
       </div>
 
       {/* Confirmation Modal */}
-      {showConfirmationModal && (
+      {showConfirmationModal && ( // shows after successful submit
         <div id="confirmation-modal" className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 md:p-8">
             <div className="flex flex-col items-center mb-6">
