@@ -8,14 +8,19 @@ const ProjectLocationSection = ({ box1, setBox1, errors = {} }) => {
   const projectAddr = box1.location;
   const enterpriseAddr = box1.enterprise.address;
 
-  // REGION STATE (frontend-only)
+  // REGION STATE 
   const [projectRegion, setProjectRegion] = useState('');
+  const [projectProvinceCode, setProjectProvinceCode] = useState('');
+  const [projectCityCode, setProjectCityCode] = useState('');
+  const [projectBarangayCode, setProjectBarangayCode] = useState('');
   const [enterpriseRegion, setEnterpriseRegion] = useState('');
+  const [enterpriseProvinceCode, setEnterpriseProvinceCode] = useState('');
+  const [enterpriseCityCode, setEnterpriseCityCode] = useState('');
+  const [enterpriseBarangayCode, setEnterpriseBarangayCode] = useState('');
 
-  const projectPH = usePHAddress(projectRegion, projectAddr.provinceCode, projectAddr.cityCode);
-  const enterprisePH = usePHAddress(enterpriseRegion, enterpriseAddr.provinceCode, enterpriseAddr.cityCode);
+  const projectPH = usePHAddress(projectRegion, projectProvinceCode, projectCityCode);
+  const enterprisePH = usePHAddress(enterpriseRegion, enterpriseProvinceCode, enterpriseCityCode);
 
-  // 🔒 SAFE SETTERS (store NAMES only)
   const setProjectField = (field, value) => {
     setBox1(prev => ({
       ...prev,
@@ -65,14 +70,20 @@ const ProjectLocationSection = ({ box1, setBox1, errors = {} }) => {
         />
 
         {/* REGION */}
+        <FormField label="Region">
         <select
           value={projectRegion}
           onChange={e => {
-            setProjectRegion(e.target.value);
+            const code = e.target.value;
+            setProjectRegion(code);
+            setProjectProvinceCode('');
+            setProjectCityCode('');
+            setProjectBarangayCode('');
             setProjectField('province', '');
             setProjectField('city', '');
             setProjectField('barangay', '');
           }}
+          className="mt-1 block w-full px-3 py-2 text-sm sm:text-base rounded-md shadow-sm border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">Select Region</option>
           {projectPH.regionList.map(r => (
@@ -81,15 +92,24 @@ const ProjectLocationSection = ({ box1, setBox1, errors = {} }) => {
             </option>
           ))}
         </select>
+        </FormField>
 
         {/* PROVINCE */}
+        <FormField label="Province">
         <select
+          value={projectProvinceCode}
+          disabled={!projectRegion}
           onChange={e => {
-            const p = projectPH.provinceList.find(x => x.province_code === e.target.value);
+            const code = e.target.value;
+            setProjectProvinceCode(code);
+            const p = projectPH.provinceList.find(x => x.province_code === code);
             setProjectField('province', p?.province_name || '');
+            setProjectCityCode('');
+            setProjectBarangayCode('');
             setProjectField('city', '');
             setProjectField('barangay', '');
           }}
+          className="mt-1 block w-full px-3 py-2 text-sm sm:text-base rounded-md shadow-sm border border-gray-300 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
         >
           <option value="">Select Province</option>
           {projectPH.provinceList.map(p => (
@@ -98,14 +118,22 @@ const ProjectLocationSection = ({ box1, setBox1, errors = {} }) => {
             </option>
           ))}
         </select>
+        </FormField>
 
         {/* CITY */}
+        <FormField label="City / Municipality">
         <select
+          value={projectCityCode}
+          disabled={!projectProvinceCode}
           onChange={e => {
-            const c = projectPH.cityList.find(x => x.city_code === e.target.value);
+            const code = e.target.value;
+            setProjectCityCode(code);
+            const c = projectPH.cityList.find(x => x.city_code === code);
             setProjectField('city', c?.city_name || '');
+            setProjectBarangayCode('');
             setProjectField('barangay', '');
           }}
+          className="mt-1 block w-full px-3 py-2 text-sm sm:text-base rounded-md shadow-sm border border-gray-300 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
         >
           <option value="">Select City / Municipality</option>
           {projectPH.cityList.map(c => (
@@ -114,13 +142,20 @@ const ProjectLocationSection = ({ box1, setBox1, errors = {} }) => {
             </option>
           ))}
         </select>
+        </FormField>
 
         {/* BARANGAY */}
+        <FormField label="Barangay">
         <select
+          value={projectBarangayCode}
+          disabled={!projectCityCode}
           onChange={e => {
-            const b = projectPH.barangayList.find(x => x.brgy_code === e.target.value);
+            const code = e.target.value;
+            setProjectBarangayCode(code);
+            const b = projectPH.barangayList.find(x => x.brgy_code === code);
             setProjectField('barangay', b?.brgy_name || '');
           }}
+          className="mt-1 block w-full px-3 py-2 text-sm sm:text-base rounded-md shadow-sm border border-gray-300 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
         >
           <option value="">Select Barangay</option>
           {projectPH.barangayList.map(b => (
@@ -129,6 +164,7 @@ const ProjectLocationSection = ({ box1, setBox1, errors = {} }) => {
             </option>
           ))}
         </select>
+        </FormField>
       </FieldGroup>
 
       {/* ENTERPRISE ADDRESS (same logic) */}
@@ -140,11 +176,16 @@ const ProjectLocationSection = ({ box1, setBox1, errors = {} }) => {
         <select
           value={enterpriseRegion}
           onChange={e => {
-            setEnterpriseRegion(e.target.value);
+            const code = e.target.value;
+            setEnterpriseRegion(code);
+            setEnterpriseProvinceCode('');
+            setEnterpriseCityCode('');
+            setEnterpriseBarangayCode('');
             setEnterpriseField('province', '');
             setEnterpriseField('city', '');
             setEnterpriseField('barangay', '');
           }}
+          className="mt-1 block w-full px-3 py-2 text-sm sm:text-base rounded-md shadow-sm border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">Select Region</option>
           {enterprisePH.regionList.map(r => (
@@ -155,10 +196,19 @@ const ProjectLocationSection = ({ box1, setBox1, errors = {} }) => {
         </select>
 
         <select
+          value={enterpriseProvinceCode}
+          disabled={!enterpriseRegion}
           onChange={e => {
-            const p = enterprisePH.provinceList.find(x => x.province_code === e.target.value);
+            const code = e.target.value;
+            setEnterpriseProvinceCode(code);
+            const p = enterprisePH.provinceList.find(x => x.province_code === code);
             setEnterpriseField('province', p?.province_name || '');
+            setEnterpriseCityCode('');
+            setEnterpriseBarangayCode('');
+            setEnterpriseField('city', '');
+            setEnterpriseField('barangay', '');
           }}
+          className="mt-1 block w-full px-3 py-2 text-sm sm:text-base rounded-md shadow-sm border border-gray-300 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
         >
           <option value="">Select Province</option>
           {enterprisePH.provinceList.map(p => (
@@ -169,10 +219,17 @@ const ProjectLocationSection = ({ box1, setBox1, errors = {} }) => {
         </select>
 
         <select
+          value={enterpriseCityCode}
+          disabled={!enterpriseProvinceCode}
           onChange={e => {
-            const c = enterprisePH.cityList.find(x => x.city_code === e.target.value);
+            const code = e.target.value;
+            setEnterpriseCityCode(code);
+            const c = enterprisePH.cityList.find(x => x.city_code === code);
             setEnterpriseField('city', c?.city_name || '');
+            setEnterpriseBarangayCode('');
+            setEnterpriseField('barangay', '');
           }}
+          className="mt-1 block w-full px-3 py-2 text-sm sm:text-base rounded-md shadow-sm border border-gray-300 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
         >
           <option value="">Select City</option>
           {enterprisePH.cityList.map(c => (
@@ -183,10 +240,15 @@ const ProjectLocationSection = ({ box1, setBox1, errors = {} }) => {
         </select>
 
         <select
+          value={enterpriseBarangayCode}
+          disabled={!enterpriseCityCode}
           onChange={e => {
-            const b = enterprisePH.barangayList.find(x => x.brgy_code === e.target.value);
+            const code = e.target.value;
+            setEnterpriseBarangayCode(code);
+            const b = enterprisePH.barangayList.find(x => x.brgy_code === code);
             setEnterpriseField('barangay', b?.brgy_name || '');
           }}
+          className="mt-1 block w-full px-3 py-2 text-sm sm:text-base rounded-md shadow-sm border border-gray-300 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
         >
           <option value="">Select Barangay</option>
           {enterprisePH.barangayList.map(b => (
