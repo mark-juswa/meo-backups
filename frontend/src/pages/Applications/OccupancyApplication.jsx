@@ -415,28 +415,71 @@ const OccupancyApplication = () => {
 
   const ProjectLocationSelector = ({ value, onChange }) => {
     const st = (value || '').split(',')[0]?.trim() || '';
-    const [region, setRegion] = useState('');
-    const [province, setProvince] = useState('');
-    const [city, setCity] = useState('');
-    const [barangay, setBarangay] = useState('');
-    const { regionList, provinceList, cityList, barangayList } = usePHAddress(region, province, city);
+    const [regionCode, setRegionCode] = useState('');
+    const [provinceCode, setProvinceCode] = useState('');
+    const [cityCode, setCityCode] = useState('');
+    const [barangayCode, setBarangayCode] = useState('');
+    const { regionList, provinceList, cityList, barangayList } = usePHAddress(regionCode, provinceCode, cityCode);
+    const compose = (brgyName, cityName, provName) => [st, brgyName, cityName, provName].filter(Boolean).join(', ');
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-2">
-        <select value={region} onChange={(e)=>{ setRegion(e.target.value); setProvince(''); setCity(''); setBarangay(''); }} className="p-2 border rounded">
+        <select
+          value={regionCode}
+          onChange={(e)=>{ const code = e.target.value; setRegionCode(code); setProvinceCode(''); setCityCode(''); setBarangayCode(''); }}
+          className="p-2 border rounded"
+        >
           <option value="">Region (optional)</option>
-          {regionList.map(r => <option key={r.code || r.region_code || r.name} value={r.name || r.region || r.region_name}>{r.name || r.region || r.region_name}</option>)}
+          {regionList.map(r => (
+            <option key={r.region_code} value={r.region_code}>{r.region_name || r.name}</option>
+          ))}
         </select>
-        <select value={province} onChange={(e)=>{ setProvince(e.target.value); setCity(''); setBarangay(''); onChange([st, '', '', e.target.value].filter(Boolean).join(', ')); }} className="p-2 border rounded">
+        <select
+          value={provinceCode}
+          disabled={!regionCode}
+          onChange={(e)=>{
+            const code = e.target.value; setProvinceCode(code); setCityCode(''); setBarangayCode('');
+            const p = provinceList.find(x => x.province_code === code);
+            onChange(compose('', '', p?.province_name || ''));
+          }}
+          className="p-2 border rounded disabled:bg-gray-100"
+        >
           <option value="">Province</option>
-          {provinceList.map(p => <option key={p.code || p.province_code || p.name} value={p.name || p.province || p.provinceName}>{p.name || p.province || p.provinceName}</option>)}
+          {provinceList.map(p => (
+            <option key={p.province_code} value={p.province_code}>{p.province_name || p.name}</option>
+          ))}
         </select>
-        <select value={city} disabled={!province} onChange={(e)=>{ setCity(e.target.value); setBarangay(''); onChange([st, '', e.target.value, province].filter(Boolean).join(', ')); }} className="p-2 border rounded">
+        <select
+          value={cityCode}
+          disabled={!provinceCode}
+          onChange={(e)=>{
+            const code = e.target.value; setCityCode(code); setBarangayCode('');
+            const c = cityList.find(x => x.city_code === code);
+            const p = provinceList.find(x => x.province_code === provinceCode);
+            onChange(compose('', c?.city_name || '', p?.province_name || ''));
+          }}
+          className="p-2 border rounded disabled:bg-gray-100"
+        >
           <option value="">City / Municipality</option>
-          {cityList.map(c => <option key={c.code || c.city_code || c.name} value={c.name || c.city || c.cityName}>{c.name || c.city || c.cityName}</option>)}
+          {cityList.map(c => (
+            <option key={c.city_code} value={c.city_code}>{c.city_name || c.name}</option>
+          ))}
         </select>
-        <select value={barangay} disabled={!city} onChange={(e)=>{ setBarangay(e.target.value); onChange([st, e.target.value, city, province].filter(Boolean).join(', ')); }} className="p-2 border rounded">
+        <select
+          value={barangayCode}
+          disabled={!cityCode}
+          onChange={(e)=>{
+            const code = e.target.value; setBarangayCode(code);
+            const b = barangayList.find(x => x.brgy_code === code);
+            const c = cityList.find(x => x.city_code === cityCode);
+            const p = provinceList.find(x => x.province_code === provinceCode);
+            onChange(compose(b?.brgy_name || '', c?.city_name || '', p?.province_name || ''));
+          }}
+          className="p-2 border rounded disabled:bg-gray-100"
+        >
           <option value="">Barangay</option>
-          {barangayList.map(b => <option key={b.code || b.brgy_code || b.name} value={b.name || b.brgy || b.brgyName}>{b.name || b.brgy || b.brgyName}</option>)}
+          {barangayList.map(b => (
+            <option key={b.brgy_code} value={b.brgy_code}>{b.brgy_name || b.name}</option>
+          ))}
         </select>
       </div>
     );
