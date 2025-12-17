@@ -5,13 +5,8 @@ import ScopeOfWorkSection from './ScopeOfWorkSection';
 import OccupancySection from './OccupancySection';
 import ProjectDetailsSection from './ProjectDetailsSection';
 
-/**
- * Redesigned Step 1: Task-oriented, user-friendly sections
- * Replaces the old Box 1 form layout
- * Maintains 100% compatibility with existing state structure
- */
-const Step1Redesigned = ({ box1, setBox1, errors, activeSection: controlledActiveSection, setActiveSection: setControlledActiveSection, showQuickNav = true }) => {
-  // Track which sub-section is currently active (for progressive disclosure)
+
+const StartSection = ({ box1, setBox1, errors, activeSection: controlledActiveSection, setActiveSection: setControlledActiveSection, showQuickNav = true }) => {
   const [uncontrolledActive, setUncontrolledActive] = useState('applicant');
   const activeSection = controlledActiveSection ?? uncontrolledActive;
   const setActiveSection = setControlledActiveSection ?? setUncontrolledActive;
@@ -109,4 +104,4 @@ const Step1Redesigned = ({ box1, setBox1, errors, activeSection: controlledActiv
   );
 };
 
-export default Step1Redesigned;
+export default StartSection;

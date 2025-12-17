@@ -6,7 +6,7 @@ import { PDFDocument } from 'pdf-lib';
 import SuccessModal from '../components/modals/confirmation/SuccessModal';
 
 // Import redesigned Step 1 component
-import Step1Redesigned from './sections/Step1Redesigned';
+import StartSection from './sections/StartSection';
 
 const DownloadIcon = () => (
   <svg className="w-5 h-5 inline mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -762,7 +762,7 @@ const BuildingApplication = () => {
             <form onSubmit={handleConfirmSubmit}>
             {/* BOX 1 - REDESIGNED */}
             <div id="form-section-1" className={currentStep === 1 ? 'mb-8' : 'hidden'}>
-              <Step1Redesigned box1={box1} setBox1={setBox1} errors={errors} activeSection={step1ActiveSection} setActiveSection={setStep1ActiveSection} showQuickNav={false} />
+              <StartSection box1={box1} setBox1={setBox1} errors={errors} activeSection={step1ActiveSection} setActiveSection={setStep1ActiveSection} showQuickNav={false} />
             </div>
 
             {/* BOX 2, 3, 4 */}
