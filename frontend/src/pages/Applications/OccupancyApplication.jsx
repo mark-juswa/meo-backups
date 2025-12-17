@@ -90,6 +90,13 @@ const OccupancyApplication = () => {
 
   // Step 1 internal tab state
   const [activeTab, setActiveTab] = useState('permitInfo'); // 'permitInfo' | 'ownerPermittee' | 'requirements' | 'projectDetails' | 'certification'
+  const tabs = [
+    { id: 'permitInfo', label: 'Permit Information' },
+    { id: 'ownerPermittee', label: 'Owner / Permittee' },
+    { id: 'requirements', label: 'Requirements Submitted' },
+    { id: 'projectDetails', label: 'Project Details' },
+    { id: 'certification', label: 'Certification & Signatures' }
+  ];
 
   useEffect(() => {
     if (auth.user) {
@@ -671,13 +678,7 @@ const OccupancyApplication = () => {
               {/* Step 1 Internal Tabs */}
               <div className="mb-6 bg-gray-50 p-3 rounded-lg border border-gray-200">
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    { id: 'permitInfo', label: 'Permit Information' },
-                    { id: 'ownerPermittee', label: 'Owner / Permittee' },
-                    { id: 'requirements', label: 'Requirements Submitted' },
-                    { id: 'projectDetails', label: 'Project Details' },
-                    { id: 'certification', label: 'Certification & Signatures' }
-                  ].map(tab => (
+                  {tabs.map(tab => (
                     <button
                       key={tab.id}
                       type="button"
@@ -751,9 +752,38 @@ const OccupancyApplication = () => {
 
             {/* Navigation Buttons */}
             <div id="nav-buttons" className="flex justify-between gap-3 mt-6 sm:mt-8">
-              <button type="button" onClick={() => setCurrentStep(s => Math.max(1, s - 1))} className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-lg text-sm sm:text-base ${currentStep > 1 ? 'block' : 'hidden'}`}>Previous</button>
-              <button type="button" onClick={() => setCurrentStep(s => Math.min(2, s + 1))} className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-600 text-white font-semibold rounded-lg text-sm sm:text-base ${currentStep < 2 ? 'block' : 'hidden'}`}>Next</button>
-              <button type="submit" disabled={loading} className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-green-600 text-white font-semibold rounded-lg text-sm sm:text-base ${currentStep === 2 ? 'block' : 'hidden'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>{loading ? 'Submitting...' : 'Confirm & Submit'}</button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (currentStep === 1) {
+                    const idx = tabs.findIndex(t => t.id === activeTab);
+                    if (idx > 0) setActiveTab(tabs[idx - 1].id);
+                  } else {
+                    setCurrentStep(s => Math.max(1, s - 1));
+                  }
+                }}
+                className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-lg text-sm sm:text-base ${currentStep > 1 || (currentStep === 1 && activeTab !== tabs[0].id) ? 'block' : 'hidden'}`}
+              >
+                Previous
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (currentStep === 1) {
+                    const idx = tabs.findIndex(t => t.id === activeTab);
+                    if (idx < tabs.length - 1) setActiveTab(tabs[idx + 1].id);
+                    else setCurrentStep(2);
+                  } else if (currentStep < 2) {
+                    setCurrentStep(s => Math.min(2, s + 1));
+                  }
+                }}
+                className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-600 text-white font-semibold rounded-lg text-sm sm:text-base ${currentStep < 2 ? 'block' : 'hidden'}`}
+              >
+                Next
+              </button>
+
+              <button type="submit" disabled={loading} className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-green-600 text-white font-semibold rounded-lg text-sm sm:text-base ${currentStep === 2 ? 'block' : 'hidden'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>{loading ? 'Submitting...' : 'Submit Application'}</button>
             </div>
           </form>
         )}  
