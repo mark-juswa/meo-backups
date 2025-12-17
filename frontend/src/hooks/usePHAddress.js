@@ -1,47 +1,48 @@
 import { regions, provinces, cities, barangays } from 'select-philippines-address';
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 
-export const usePHAddress = (selectedRegion, selectedProvince, selectedCity) => {
+export const usePHAddress = (regionCode, provinceCode, cityCode) => {
+  const [regionList, setRegionList] = useState([]);
+  const [provinceList, setProvinceList] = useState([]);
+  const [cityList, setCityList] = useState([]);
+  const [barangayList, setBarangayList] = useState([]);
 
   // REGIONS
-  const regionList = useMemo(() => {
-    return Array.isArray(regions) ? regions : [];
+  useEffect(() => {
+    regions().then(setRegionList);
   }, []);
 
   // PROVINCES
-  const provinceList = useMemo(() => {
-    if (!selectedRegion) return [];
-    return provinces.filter(p =>
-      p.region === selectedRegion ||
-      p.region_name === selectedRegion ||
-      p.region_code === selectedRegion
-    );
-  }, [selectedRegion]);
+  useEffect(() => {
+    if (!regionCode) {
+      setProvinceList([]);
+      return;
+    }
+    provinces(regionCode).then(setProvinceList);
+  }, [regionCode]);
 
-  // CITIES / MUNICIPALITIES
-  const cityList = useMemo(() => {
-    if (!selectedProvince) return [];
-    return cities.filter(c =>
-      c.province === selectedProvince ||
-      c.province_name === selectedProvince ||
-      c.province_code === selectedProvince
-    );
-  }, [selectedProvince]);
+  // CITIES
+  useEffect(() => {
+    if (!provinceCode) {
+      setCityList([]);
+      return;
+    }
+    cities(provinceCode).then(setCityList);
+  }, [provinceCode]);
 
   // BARANGAYS
-  const barangayList = useMemo(() => {
-    if (!selectedCity) return [];
-    return barangays.filter(b =>
-      b.city === selectedCity ||
-      b.city_name === selectedCity ||
-      b.city_code === selectedCity
-    );
-  }, [selectedCity]);
+  useEffect(() => {
+    if (!cityCode) {
+      setBarangayList([]);
+      return;
+    }
+    barangays(cityCode).then(setBarangayList);
+  }, [cityCode]);
 
   return {
     regionList,
     provinceList,
     cityList,
-    barangayList
+    barangayList,
   };
 };
