@@ -203,24 +203,72 @@ const OccupancyApplication = () => {
     navigate('/');
   };
 
-  const goToDocumentUpload = () => {
-    setShowConfirmationModal(false);
-    navigate(`/application/documents/${submissionData.applicationId}`, {
-      state: { applicationData: submissionData }
-    });
-  };
-
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
     navigate('/?status=occupancy_submitted');
   };
 
+  const validateForm = () => {
+    // Step 1: Permit Info
+    if (!formData.buildingPermitReferenceNo?.trim()) {
+      return { valid: false, step: 1, tab: 'permitInfo', message: 'Building permit reference number is required.' };
+    }
+    if (!formData.permitInfo.buildingPermitDate) {
+      return { valid: false, step: 1, tab: 'permitInfo', message: 'Building permit date is required.' };
+    }
+    if (!formData.permitInfo.fsecNo?.trim()) {
+      return { valid: false, step: 1, tab: 'permitInfo', message: 'FSEC No. is required.' };
+    }
+    if (!formData.permitInfo.fsecDate) {
+      return { valid: false, step: 1, tab: 'permitInfo', message: 'FSEC Date is required.' };
+    }
+
+    // Step 1: Project Details
+    if (!formData.projectDetails.projectName?.trim()) {
+      return { valid: false, step: 1, tab: 'projectDetails', message: 'Project name is required.' };
+    }
+    if (!formData.projectDetails.projectLocation?.trim()) {
+      return { valid: false, step: 1, tab: 'projectDetails', message: 'Project location is required.' };
+    }
+    if (!formData.projectDetails.occupancyUse?.trim()) {
+      return { valid: false, step: 1, tab: 'projectDetails', message: 'Use / Character of Occupancy is required.' };
+    }
+    if (!formData.projectDetails.noStoreys?.toString().trim()) {
+      return { valid: false, step: 1, tab: 'projectDetails', message: 'No. of storeys is required.' };
+    }
+    if (!formData.projectDetails.dateCompletion) {
+      return { valid: false, step: 1, tab: 'projectDetails', message: 'Date of completion is required.' };
+    }
+
+    // Step 1: Certification & Signatures
+    if (!formData.signatures.ownerName?.trim()) {
+      return { valid: false, step: 1, tab: 'certification', message: 'Owner name is required.' };
+    }
+    if (!formData.signatures.inspectorName?.trim()) {
+      return { valid: false, step: 1, tab: 'certification', message: 'Inspector name is required.' };
+    }
+    if (!formData.signatures.engineerName?.trim()) {
+      return { valid: false, step: 1, tab: 'certification', message: 'Engineer name is required.' };
+    }
+
+    // All good -> Step 2 can submit
+    return { valid: true };
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.buildingPermitReferenceNo.trim()) {
-      setError('Building permit reference number is required.');
+
+    // Custom validation so hidden required fields don't block submission
+    const check = validateForm();
+    if (!check.valid) {
+      setError(check.message);
+      setCurrentStep(check.step);
+      if (check.tab) setActiveTab(check.tab);
+      // Scroll to top so user sees the error
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+
     setLoading(true);
     setError(null);
 
@@ -609,7 +657,7 @@ const OccupancyApplication = () => {
 
         {/* STEP 1+: Main Form */}
         {currentStep >= 1 && (
-          <form className="space-y-8" onSubmit={handleSubmit}>
+          <form className="space-y-8" onSubmit={handleSubmit} noValidate>
 
             {/* Badge */}
             <div className="mb-2 flex justify-center">

@@ -7,7 +7,7 @@ const CertificationSignaturesSection = ({ formData, handleSignaturesChange, down
       <div className="grid md:grid-cols-3 gap-8 items-start">
         <div className="text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
           <p className="mb-2 font-medium">Submitted by (Owner / Permittee)</p>
-          <input name="ownerName" value={formData.signatures.ownerName} onChange={handleSignaturesChange} className="border border-gray-300 text-center w-full max-w-xs mx-auto p-1" placeholder="Owner full name" required />
+          <input name="ownerName" value={formData.signatures.ownerName} onChange={handleSignaturesChange} className="border border-gray-300 text-center w-full max-w-xs mx-auto p-1" placeholder="Owner full name" />
           <div className="mt-3 space-y-1">
             <input name="ownerCtcNo" value={formData.signatures.ownerCtcNo} onChange={handleSignaturesChange} placeholder="CTC No." className="block w-full p-1 border border-gray-300 rounded" />
             <input type="date" name="ownerCtcDate" value={formData.signatures.ownerCtcDate} onChange={handleSignaturesChange} className="block w-full p-1 border border-gray-300 rounded" />
@@ -22,7 +22,7 @@ const CertificationSignaturesSection = ({ formData, handleSignaturesChange, down
 
         <div className="text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
           <p className="mb-2 font-medium">Prepared by (Architect / Civil Engineer)</p>
-          <input name="engineerName" value={formData.signatures.engineerName} onChange={handleSignaturesChange} className="border-b-2 text-center w-full max-w-xs mx-auto p-1" placeholder="Engineer full name" required />
+          <input name="engineerName" value={formData.signatures.engineerName} onChange={handleSignaturesChange} className="border-b-2 text-center w-full max-w-xs mx-auto p-1" placeholder="Engineer full name" />
           <div className="mt-3 space-y-1 text-left max-w-sm mx-auto">
             <input name="engineerPrcNo" value={formData.signatures.engineerPrcNo} onChange={handleSignaturesChange} placeholder="PRC No." className="block w-full p-1 border border-gray-300 rounded" />
             <input type="date" name="engineerPrcValidity" value={formData.signatures.engineerPrcValidity} onChange={handleSignaturesChange} className="block w-full p-1 border border-gray-300 rounded" />
