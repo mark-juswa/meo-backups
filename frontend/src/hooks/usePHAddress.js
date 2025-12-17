@@ -9,7 +9,11 @@ export const usePHAddress = (regionCode, provinceCode, cityCode) => {
 
   // REGIONS
   useEffect(() => {
-    regions().then(setRegionList);
+    regions()
+      .then((data) => {
+        setRegionList(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setRegionList([]));
   }, []);
 
   // PROVINCES
@@ -18,7 +22,11 @@ export const usePHAddress = (regionCode, provinceCode, cityCode) => {
       setProvinceList([]);
       return;
     }
-    provinces(regionCode).then(setProvinceList);
+    provinces(regionCode)
+      .then((data) => {
+        setProvinceList(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setProvinceList([]));
   }, [regionCode]);
 
   // CITIES
@@ -27,7 +35,11 @@ export const usePHAddress = (regionCode, provinceCode, cityCode) => {
       setCityList([]);
       return;
     }
-    cities(provinceCode).then(setCityList);
+    cities(provinceCode)
+      .then((data) => {
+        setCityList(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setCityList([]));
   }, [provinceCode]);
 
   // BARANGAYS
@@ -36,7 +48,11 @@ export const usePHAddress = (regionCode, provinceCode, cityCode) => {
       setBarangayList([]);
       return;
     }
-    barangays(cityCode).then(setBarangayList);
+    barangays(cityCode)
+      .then((data) => {
+        setBarangayList(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setBarangayList([]));
   }, [cityCode]);
 
   return {

@@ -59,7 +59,8 @@ app.use((req, res, next) => {
         https://meo-online-services.onrender.com
         https://meo-sv.onrender.com
         https://meo-backup.onrender.com
-        https://www.google-analytics.com;
+        https://www.google-analytics.com
+        https://isaacdarcilla.github.io;
     frame-src 'self';
     object-src 'none';
     base-uri 'self';
