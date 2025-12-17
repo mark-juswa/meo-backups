@@ -3,7 +3,7 @@ import React from 'react';
 const CertificationSignaturesSection = ({ formData, handleSignaturesChange, downloadFormAsPdf, onSubmit, loading, error, hideActions = false }) => {
   return (
     <section className="mt-12 pt-8 border-t-2 border-gray-300">
-      <h2 className="text-xl font-semibold text-gray-800 mb-6">5. Certification & Signatures</h2>
+      <h2 className="text-xl font-semibold text-gray-800 mb-6">Certification & Signatures</h2>
       <div className="grid md:grid-cols-3 gap-8 items-start">
         <div className="text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
           <p className="mb-2 font-medium">Submitted by (Owner / Permittee)</p>

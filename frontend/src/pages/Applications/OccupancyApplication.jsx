@@ -640,7 +640,7 @@ const OccupancyApplication = () => {
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">You can switch tabs anytime. Your input is preserved.</p>
+                <p className="text-xs text-gray-500 mt-2">You can switch tabs anytime. Your input is saved.</p>
               </div>
 
               {/* Conditional section rendering per activeTab */}
@@ -690,14 +690,14 @@ const OccupancyApplication = () => {
 
             {/* STEP 2: Review / Submit */}
             <div className={currentStep === 2 ? 'block' : 'hidden'}>
-              <h2 className="text-lg sm:text-xl font-semibold mb-4 border-b pb-2 text-blue-600">2. Review & Submit</h2>
+              
               <CertificationSignaturesSection
                 formData={formData}
                 handleSignaturesChange={handleSignaturesChange}
                 downloadFormAsPdf={downloadFormAsPdf}
                 loading={loading}
                 error={error}
-                hideActions={false}
+                hideActions={true}
               />
             </div>
 
@@ -726,8 +726,7 @@ const OccupancyApplication = () => {
             </div>
             <div className="flex flex-col space-y-3">
               <button type="button" onClick={downloadFormAsPdf} className="w-full px-4 py-2 bg-red-600 text-white font-semibold rounded-lg"><DownloadIcon /> Download Full Form (PDF)</button>
-              <button onClick={goToDocumentUpload} className="w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-lg">Upload Supporting Documents (Optional)</button>
-              <button onClick={closeConfirmationModal} className="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg">Skip Documents & Go Home</button>
+                            <button onClick={closeConfirmationModal} className="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg">Skip Documents & Go Home</button>
             </div>
           </div>
         </div>
