@@ -53,6 +53,7 @@ const BuildingApplication = () => {
       tctNo: '',
       taxDecNo: '',
       street: '',
+      province: '',
       barangay: '',
       city: '',
     },

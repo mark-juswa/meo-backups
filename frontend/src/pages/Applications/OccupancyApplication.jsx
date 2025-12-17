@@ -4,6 +4,7 @@ import axios from 'axios';
 import { AuthContext } from "../../context/AuthContext";
 import { PDFDocument } from 'pdf-lib';
 import SuccessModal from '../components/modals/confirmation/SuccessModal';
+import { usePHAddress } from '../../hooks/usePHAddress';
 
 const DownloadIcon = () => (
   <svg className="w-5 h-5 inline mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -375,6 +376,72 @@ const OccupancyApplication = () => {
   // error highlight helper (keeps your style pattern similar)
   const errorClass = (flag) => (flag ? 'border-red-500 border-2' : 'border-gray-300');
 
+  // Local helper components for guided address selection (do not alter payload keys)
+  const useOwnerAddrState = (inputValue) => {
+    const parsed = (inputValue || '').split(',').map(s=>s.trim());
+    const street = parsed[0] || '';
+    const bgy = parsed[1] || '';
+    const cty = parsed[2] || '';
+    const prv = parsed[3] || '';
+    const [region, setRegion] = useState('');
+    const [province, setProvince] = useState(prv);
+    const [city, setCity] = useState(cty);
+    const [barangay, setBarangay] = useState(bgy);
+    const { regionList, provinceList, cityList, barangayList } = usePHAddress(region, province, city);
+    const stringify = (st, brgy, c, p) => [st || street, brgy || barangay, c || city, p || province].filter(Boolean).join(', ');
+    return { region, setRegion, province, setProvince, city, setCity, barangay, setBarangay, regionList, provinceList, cityList, barangayList, stringify, street };
+  };
+
+  const OwnerAddressSelector = ({ value, onChange }) => {
+    const st = (value || '').split(',')[0]?.trim() || '';
+    const { region, setRegion, province, setProvince, city, setCity, barangay, setBarangay, regionList, provinceList, cityList, barangayList, stringify } = useOwnerAddrState(value);
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <select value={province} onChange={(e)=>{ setProvince(e.target.value); setCity(''); setBarangay(''); onChange(stringify(st, '', '', e.target.value)); }} className="p-2 border rounded">
+          <option value="">Select Province</option>
+          {provinceList.map(p => <option key={p.code || p.province_code || p.name} value={p.name || p.province || p.provinceName}>{p.name || p.province || p.provinceName}</option>)}
+        </select>
+        <select value={city} disabled={!province} onChange={(e)=>{ setCity(e.target.value); setBarangay(''); onChange(stringify(st, '', e.target.value, province)); }} className="p-2 border rounded">
+          <option value="">Select City / Municipality</option>
+          {cityList.map(c => <option key={c.code || c.city_code || c.name} value={c.name || c.city || c.cityName}>{c.name || c.city || c.cityName}</option>)}
+        </select>
+        <select value={barangay} disabled={!city} onChange={(e)=>{ setBarangay(e.target.value); onChange(stringify(st, e.target.value, city, province)); }} className="p-2 border rounded">
+          <option value="">Select Barangay</option>
+          {barangayList.map(b => <option key={b.code || b.brgy_code || b.name} value={b.name || b.brgy || b.brgyName}>{b.name || b.brgy || b.brgyName}</option>)}
+        </select>
+      </div>
+    );
+  };
+
+  const ProjectLocationSelector = ({ value, onChange }) => {
+    const st = (value || '').split(',')[0]?.trim() || '';
+    const [region, setRegion] = useState('');
+    const [province, setProvince] = useState('');
+    const [city, setCity] = useState('');
+    const [barangay, setBarangay] = useState('');
+    const { regionList, provinceList, cityList, barangayList } = usePHAddress(region, province, city);
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-2">
+        <select value={region} onChange={(e)=>{ setRegion(e.target.value); setProvince(''); setCity(''); setBarangay(''); }} className="p-2 border rounded">
+          <option value="">Region (optional)</option>
+          {regionList.map(r => <option key={r.code || r.region_code || r.name} value={r.name || r.region || r.region_name}>{r.name || r.region || r.region_name}</option>)}
+        </select>
+        <select value={province} onChange={(e)=>{ setProvince(e.target.value); setCity(''); setBarangay(''); onChange([st, '', '', e.target.value].filter(Boolean).join(', ')); }} className="p-2 border rounded">
+          <option value="">Province</option>
+          {provinceList.map(p => <option key={p.code || p.province_code || p.name} value={p.name || p.province || p.provinceName}>{p.name || p.province || p.provinceName}</option>)}
+        </select>
+        <select value={city} disabled={!province} onChange={(e)=>{ setCity(e.target.value); setBarangay(''); onChange([st, '', e.target.value, province].filter(Boolean).join(', ')); }} className="p-2 border rounded">
+          <option value="">City / Municipality</option>
+          {cityList.map(c => <option key={c.code || c.city_code || c.name} value={c.name || c.city || c.cityName}>{c.name || c.city || c.cityName}</option>)}
+        </select>
+        <select value={barangay} disabled={!city} onChange={(e)=>{ setBarangay(e.target.value); onChange([st, e.target.value, city, province].filter(Boolean).join(', ')); }} className="p-2 border rounded">
+          <option value="">Barangay</option>
+          {barangayList.map(b => <option key={b.code || b.brgy_code || b.name} value={b.name || b.brgy || b.brgyName}>{b.name || b.brgy || b.brgyName}</option>)}
+        </select>
+      </div>
+    );
+  };
+
   return (
     <div className="antialiased text-gray-800 bg-gray-100">
       <div id="form-container" className="bg-white p-6 md:p-10 max-w-5xl mx-auto my-6 shadow-2xl rounded-xl border-gray-200">
@@ -496,9 +563,11 @@ const OccupancyApplication = () => {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Address</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <input type="text" name="address" placeholder="Street address, barangay, city" value={formData.ownerDetails.address} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded col-span-2" />
-                  <input type="number" name="zip" placeholder="ZIP Code" value={formData.ownerDetails.zip} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded" />
+                <div className="grid grid-cols-1 gap-3">
+                  <input type="text" name="address" placeholder="Street (you can still type manually)" value={formData.ownerDetails.address} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded" />
+                  {/* Guided selection to help construct the address string */}
+                  <OwnerAddressSelector value={formData.ownerDetails.address} onChange={(val)=> setFormData(prev=>({...prev, ownerDetails:{...prev.ownerDetails, address: val}}))} />
+                  <input type="number" name="zip" placeholder="ZIP Code" value={formData.ownerDetails.zip} onChange={handleOwnerDetailsChange} className="p-2 border border-gray-300 rounded w-full md:w-40" />
                 </div>
               </div>
               <div>
@@ -550,6 +619,7 @@ const OccupancyApplication = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700">Project Location</label>
                 <input required type="text" name="projectLocation" value={formData.projectDetails.projectLocation} onChange={handleProjectDetailsChange} className="mt-1 p-2 border border-gray-300 rounded w-full" placeholder="Street, Barangay, City" />
+                <ProjectLocationSelector value={formData.projectDetails.projectLocation} onChange={(val)=> setFormData(prev=>({...prev, projectDetails:{...prev.projectDetails, projectLocation: val}}))} />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700">Use / Character of Occupancy</label>
