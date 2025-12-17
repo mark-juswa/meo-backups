@@ -224,11 +224,48 @@ const BuildingApplication = () => {
     return newErrors;
   };
 
+  // Validate only the current Step 1 section to allow progressive navigation
+  const validateStep1Section = (section) => {
+    const sectionErrors = {};
+    switch (section) {
+      case 'applicant':
+        if (!box1.owner.lastName) sectionErrors.owner_last_name = 'Required';
+        if (!box1.owner.firstName) sectionErrors.owner_first_name = 'Required';
+        break;
+      case 'location':
+        if (!box1.location.street) sectionErrors.loc_street = 'Required';
+        if (!box1.location.barangay) sectionErrors.loc_barangay = 'Required';
+        if (!box1.location.city) sectionErrors.loc_city = 'Required';
+        break;
+      case 'scope':
+        if ((box1.scopeOfWork || []).length === 0) sectionErrors.scope = 'Select at least one';
+        break;
+      case 'occupancy':
+        if (!box1.occupancy.group) sectionErrors.occupancy = 'Select one';
+        break;
+      case 'details':
+        if (!box1.projectDetails.totalEstimatedCost) sectionErrors.total_estimated_cost = 'Required';
+        break;
+      default:
+        break;
+    }
+    return sectionErrors;
+  };
+
   const nextStep = () => {
     let newErrors = {};
     if (currentStep === 1) {
       const order = ['applicant', 'location', 'scope', 'occupancy', 'details'];
       const idx = order.indexOf(step1ActiveSection);
+
+      // Validate current section before allowing to advance to the next tab
+      const sectionErrs = validateStep1Section(order[idx]);
+      if (Object.keys(sectionErrs).length > 0) {
+        setErrors((prev) => ({ ...prev, ...sectionErrs }));
+        alert('Please complete the required fields in this section to continue.');
+        return;
+      }
+
       if (idx < order.length - 1) {
         setStep1ActiveSection(order[idx + 1]);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -849,7 +886,7 @@ const BuildingApplication = () => {
             </div>
 
             <div id="nav-buttons" className="flex justify-between gap-3 mt-6 sm:mt-8">
-              <button type="button" onClick={prevStep} className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-lg text-sm sm:text-base ${currentStep > 1 ? 'block' : 'hidden'}`}>Previous</button>
+              <button type="button" onClick={prevStep} className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-lg text-sm sm:text-base ${(currentStep > 1 || (currentStep === 1 && step1ActiveSection !== 'applicant')) ? 'block' : 'hidden'}`}>Previous</button>
               <button type="button" onClick={nextStep} className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-600 text-white font-semibold rounded-lg text-sm sm:text-base ${currentStep < 2 ? 'block' : 'hidden'}`}>Next</button>
               <button type="submit" disabled={loading} className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-green-600 text-white font-semibold rounded-lg text-sm sm:text-base ${currentStep === 2 ? 'block' : 'hidden'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>{loading ? 'Submitting...' : 'Confirm & Submit'}</button>
             </div>
