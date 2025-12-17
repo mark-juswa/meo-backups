@@ -88,6 +88,9 @@ const OccupancyApplication = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [submissionData, setSubmissionData] = useState(null);
 
+  // Step 1 internal tab state
+  const [activeTab, setActiveTab] = useState('permitInfo'); // 'permitInfo' | 'ownerPermittee' | 'requirements' | 'projectDetails' | 'certification'
+
   useEffect(() => {
     if (auth.user) {
       setFormData((prev) => ({
@@ -615,63 +618,95 @@ const OccupancyApplication = () => {
               </span>
             </div>
 
-            {/* Section 1 – Permit Information */}
-            <PermitInformationSection
-              formData={formData}
-              handleBuildingPermitRefChange={handleBuildingPermitRefChange}
-              handlePermitInfoChange={handlePermitInfoChange}
-            />
+            {/* STEP 1: Tabbed form sections */}
+            <div className={currentStep === 1 ? 'block' : 'hidden'}>
+              {/* Step 1 Internal Tabs */}
+              <div className="mb-6 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: 'permitInfo', label: 'Permit Information' },
+                    { id: 'ownerPermittee', label: 'Owner / Permittee' },
+                    { id: 'requirements', label: 'Requirements Submitted' },
+                    { id: 'projectDetails', label: 'Project Details' },
+                    { id: 'certification', label: 'Certification & Signatures' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'}`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">You can switch tabs anytime. Your input is preserved.</p>
+              </div>
 
-            {/* Section 2 – Owner / Permittee */}
-            <OwnerPermitteeSection
-              formData={formData}
-              setFormData={setFormData}
-              handleOwnerDetailsChange={handleOwnerDetailsChange}
-            />
+              {/* Conditional section rendering per activeTab */}
+              {activeTab === 'permitInfo' && (
+                <PermitInformationSection
+                  formData={formData}
+                  handleBuildingPermitRefChange={handleBuildingPermitRefChange}
+                  handlePermitInfoChange={handlePermitInfoChange}
+                />
+              )}
 
-            {/* Section 3 – Requirements */}
-            <RequirementsSection
-              formData={formData}
-              handleRequirementsChange={handleRequirementsChange}
-              handleOtherDocsChange={handleOtherDocsChange}
-            />
+              {activeTab === 'ownerPermittee' && (
+                <OwnerPermitteeSection
+                  formData={formData}
+                  setFormData={setFormData}
+                  handleOwnerDetailsChange={handleOwnerDetailsChange}
+                />
+              )}
 
-            {/* Section 4 – Project Details */}
-            <ProjectDetailsSection
-              formData={formData}
-              setFormData={setFormData}
-              handleProjectDetailsChange={handleProjectDetailsChange}
-            />
+              {activeTab === 'requirements' && (
+                <RequirementsSection
+                  formData={formData}
+                  handleRequirementsChange={handleRequirementsChange}
+                  handleOtherDocsChange={handleOtherDocsChange}
+                />
+              )}
 
-            {/* Section 5 – Certification & Signatures */}
-            <CertificationSignaturesSection
-              formData={formData}
-              handleSignaturesChange={handleSignaturesChange}
-              downloadFormAsPdf={downloadFormAsPdf}
-              loading={loading}
-              error={error}
-            />
+              {activeTab === 'projectDetails' && (
+                <ProjectDetailsSection
+                  formData={formData}
+                  setFormData={setFormData}
+                  handleProjectDetailsChange={handleProjectDetailsChange}
+                />
+              )}
 
-            {/* Actions */}
-            <div className="flex justify-center pt-8 border-t border-indigo-100">
-              <button
-                type="button"
-                onClick={downloadFormAsPdf}
-                className="bg-red-600 text-white px-4 py-2 rounded mr-3"
-              >
-                Download Filled PDF
-              </button>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-indigo-600 text-white px-6 py-3 rounded"
-              >
-                {loading ? 'Submitting...' : 'Submit Application'}
-              </button>
+              {activeTab === 'certification' && (
+                <CertificationSignaturesSection
+                  formData={formData}
+                  handleSignaturesChange={handleSignaturesChange}
+                  downloadFormAsPdf={downloadFormAsPdf}
+                  loading={loading}
+                  error={error}
+                  hideActions={true}
+                />
+              )}
             </div>
 
-            {error && <p className="text-red-600 mt-3">{error}</p>}
+            {/* STEP 2: Review / Submit */}
+            <div className={currentStep === 2 ? 'block' : 'hidden'}>
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 border-b pb-2 text-blue-600">2. Review & Submit</h2>
+              <CertificationSignaturesSection
+                formData={formData}
+                handleSignaturesChange={handleSignaturesChange}
+                downloadFormAsPdf={downloadFormAsPdf}
+                loading={loading}
+                error={error}
+                hideActions={false}
+              />
+            </div>
+
+            {/* Navigation Buttons */}
+            <div id="nav-buttons" className="flex justify-between gap-3 mt-6 sm:mt-8">
+              <button type="button" onClick={() => setCurrentStep(s => Math.max(1, s - 1))} className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-lg text-sm sm:text-base ${currentStep > 1 ? 'block' : 'hidden'}`}>Previous</button>
+              <button type="button" onClick={() => setCurrentStep(s => Math.min(2, s + 1))} className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-600 text-white font-semibold rounded-lg text-sm sm:text-base ${currentStep < 2 ? 'block' : 'hidden'}`}>Next</button>
+              <button type="submit" disabled={loading} className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-green-600 text-white font-semibold rounded-lg text-sm sm:text-base ${currentStep === 2 ? 'block' : 'hidden'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>{loading ? 'Submitting...' : 'Confirm & Submit'}</button>
+            </div>
           </form>
         )}  
 

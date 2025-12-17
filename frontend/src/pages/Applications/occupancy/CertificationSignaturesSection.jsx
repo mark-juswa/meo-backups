@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CertificationSignaturesSection = ({ formData, handleSignaturesChange, downloadFormAsPdf, onSubmit, loading, error }) => {
+const CertificationSignaturesSection = ({ formData, handleSignaturesChange, downloadFormAsPdf, onSubmit, loading, error, hideActions = false }) => {
   return (
     <section className="mt-12 pt-8 border-t-2 border-gray-300">
       <h2 className="text-xl font-semibold text-gray-800 mb-6">5. Certification & Signatures</h2>
@@ -37,13 +37,17 @@ const CertificationSignaturesSection = ({ formData, handleSignaturesChange, down
         </div>
       </div>
 
-      <div className="flex justify-center pt-8 border-t border-indigo-100">
-        <button type="button" onClick={downloadFormAsPdf} className="bg-red-600 text-white px-4 py-2 rounded mr-3">Download Filled PDF</button>
-        <button type="submit" disabled={loading} className="bg-indigo-600 text-white px-6 py-3 rounded">
-          {loading ? 'Submitting...' : 'Submit Application'}
-        </button>
-      </div>
-      {error && <p className="text-red-600 mt-3">{error}</p>}
+      {!hideActions && (
+        <>
+          <div className="flex justify-center pt-8 border-t border-indigo-100">
+            <button type="button" onClick={downloadFormAsPdf} className="bg-red-600 text-white px-4 py-2 rounded mr-3">Download Filled PDF</button>
+            <button type="submit" disabled={loading} className="bg-indigo-600 text-white px-6 py-3 rounded">
+              {loading ? 'Submitting...' : 'Submit Application'}
+            </button>
+          </div>
+          {error && <p className="text-red-600 mt-3">{error}</p>}
+        </>
+      )}
     </section>
   );
 };
