@@ -7,6 +7,7 @@ import DocumentChecklist from './DocumentChecklist';
 import ApplicationFormView from './ApplicationFormView';
 import WorkflowHistory from './WorkflowHistory';
 import ConfirmationModal from './ConfirmationModal';
+import { normalizeStatusForApp } from '../../utils/statusNormalizer';
 import { XMarkIcon as XIcon } from '@heroicons/react/24/outline';
 import { getAppIdString } from '../../../utils/idConverter';
 
@@ -62,7 +63,7 @@ export default function WorkflowModal({ role, app, onClose, onUpdate }) {
     }
     
     // Clear rejection details and publish assessment
-    onUpdate(appId, 'Payment Pending', {
+    onUpdate(appId, normalizeStatusForApp(app, 'Payment Pending'), {
       box5: assessmentData.box5,
       box6: assessmentData.box6,
       comments: 'Assessment fees calculated and published for payment.',

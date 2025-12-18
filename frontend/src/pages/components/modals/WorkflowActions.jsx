@@ -1,11 +1,15 @@
 import React from 'react';
 import { getAppIdString } from '../../../utils/idConverter';
+import { normalizeStatusForApp } from '../../utils/statusNormalizer';
 
 export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, onSaveAssessment }) {
   const status = app.status;
   const appId = getAppIdString(app);
 
   const isPaid = app.paymentDetails?.status === 'Verified' || app.workflowHistory?.some(h => h.status === 'Payment Submitted' || h.status === 'Pending BFP');
+
+  // Wrapper to ensure outgoing status is valid for specific app type
+  const update = (statusArg, payload) => onUpdate(appId, normalizeStatusForApp(app, statusArg), payload);
   
   // Check history to see what has been done
   const hasBfpApproval = app.workflowHistory?.some(h => h.comments?.includes('BFP Inspection Passed'));
@@ -33,7 +37,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
       confirmText: 'Confirm Rejection',
       onConfirm: (note) => {
         const prefix = role === 'bfpadmin' ? 'BFP Rejection: ' : (role === 'mayoradmin' ? 'Mayor Rejection: ' : 'MEO Rejection: ');
-        onUpdate(appId, 'Rejected', {
+        update('Rejected', {
           comments: prefix + note,
           isResolved: false,
         });
@@ -48,7 +52,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
         return (
           <div className="space-y-3">
             <p className="text-sm text-gray-600">Step 1: Review documents.</p>
-            <button onClick={() => onUpdate(appId, 'Pending MEO', { comments: 'Accepted for review.' })} className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">Accept & Review</button>
+            <button onClick={() => update('Pending MEO', { comments: 'Accepted for review.' })} className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">Accept & Review</button>
             <button onClick={handleReject} className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium">Reject Application</button>
           </div>
         );
@@ -75,7 +79,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
                             <button 
                                 onClick={() => {
                                     if (!isBlockedByFlags()) {
-                                        onUpdate(appId, 'Pending Mayor', { comments: 'MEO: Forwarding to Mayor for endorsement.' });
+                                        update('Pending Mayor', { comments: 'MEO: Forwarding to Mayor for endorsement.' });
                                     }
                                 }} 
                                 disabled={hasUnresolvedFlags}
@@ -93,7 +97,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
                             <button 
                                 onClick={() => {
                                     if (!isBlockedByFlags()) {
-                                        onUpdate(appId, 'Approved', { comments: 'MEO: Final Approval Granted. Ready for Permit Issuance.' });
+                                        update('Approved', { comments: 'MEO: Final Approval Granted. Ready for Permit Issuance.' });
                                     }
                                 }} 
                                 disabled={hasUnresolvedFlags}
@@ -109,7 +113,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
                          <button 
                             onClick={() => {
                                 if (!isBlockedByFlags()) {
-                                    onUpdate(appId, 'Pending BFP', { comments: 'MEO: Forwarding to BFP.' });
+                                    update('Pending BFP', { comments: 'MEO: Forwarding to BFP.' });
                                 }
                             }} 
                             disabled={hasUnresolvedFlags}
@@ -148,7 +152,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
                 <button 
                     onClick={() => {
                         if (!isBlockedByFlags()) {
-                            onUpdate(appId, 'Pending BFP', { comments: 'Payment Verified. Forwarding to BFP.' });
+                            update('Pending BFP', { comments: 'Payment Verified. Forwarding to BFP.' });
                         }
                     }} 
                     disabled={hasUnresolvedFlags}
@@ -156,7 +160,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
                 >
                     Accept
                 </button>
-                <button onClick={() => onUpdate(appId, 'Payment Pending', { comments: 'Invalid Receipt.' })} className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Reject</button>
+                <button onClick={() => update('Payment Pending', { comments: 'Invalid Receipt.' })} className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Reject</button>
             </div>
           </div>
         );
@@ -178,7 +182,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
                     onOpenConfirm({
                         title: 'Issue Final Permit',
                         message: 'This will generate the permit number and notify the user.',
-                        onConfirm: () => onUpdate(appId, 'Permit Issued', { comments: 'Official Permit Issued.' })
+                        onConfirm: () => update('Permit Issued', { comments: 'Official Permit Issued.' })
                     });
                 }} 
                 disabled={hasUnresolvedFlags}
@@ -220,7 +224,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
                   message: 'Confirm inspection passed? This will notify MEO that FSEC is issued.',
                   confirmText: 'Approve (Notify MEO)',
                   onConfirm: () => {
-                    onUpdate(appId, 'Pending Mayor', { 
+                    update('Pending Mayor', { 
                         comments: 'BFP Inspection Passed. FSEC Issuance Completed. Forwarded to Mayor.' 
                     });
                   }
@@ -263,7 +267,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
             <button 
                 onClick={() => {
                     if (isBlockedByFlags()) return;
-                    onUpdate(appId, 'Pending MEO', { comments: "Mayor Permit Approved. Returned to MEO for finalization." });
+                    update('Pending MEO', { comments: "Mayor Permit Approved. Returned to MEO for finalization." });
                 }} 
                 disabled={hasUnresolvedFlags}
                 className={`w-full px-4 py-2 text-white rounded-lg font-medium ${hasUnresolvedFlags ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
