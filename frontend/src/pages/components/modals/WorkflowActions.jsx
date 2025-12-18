@@ -12,11 +12,20 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
   const hasPublishedAssessment = (app.workflowHistory || []).some(h => {
     const c = (h.comments || '').toLowerCase();
     const s = (h.status || '').toLowerCase();
-    // Building often uses 'Payment Pending' after assessment; Occupancy maps to 'Pending MEO'
     const looksLikeAssessment = c.includes('assessment') || c.includes('fees');
     const looksLikePostAssessmentStatus = s === 'payment pending' || s === 'pending meo';
     return looksLikeAssessment && looksLikePostAssessmentStatus;
   });
+
+  // Normalize UI status so Occupancy behaves like Building in the admin workflow
+  const isOccupancy = app.applicationType === 'Occupancy' || !app.box1;
+  const uiStatus = (isOccupancy && app.status === 'Pending MEO' && hasPublishedAssessment)
+    ? 'Payment Pending'
+    : app.status;
+
+  const step2Label = hasPublishedAssessment
+    ? 'Next Action: Await Client Payment / Continue Workflow'
+    : 'Step 2: Assess Fees or flag documents';
 
   // Wrapper to ensure outgoing status is valid for specific app type
   const update = (statusArg, payload) => onUpdate(appId, normalizeStatusForApp(app, statusArg), payload);
@@ -138,7 +147,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
         
         return (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">Step 2: Assess Fees or flag documents</p>
+            <p className="text-sm text-gray-600">{step2Label}</p>
             {!hasPublishedAssessment && (
               <button onClick={onSaveAssessment} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Save & Publish Assessment</button>
             )}
