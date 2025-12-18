@@ -8,24 +8,14 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
 
   const isPaid = app.paymentDetails?.status === 'Verified' || app.workflowHistory?.some(h => h.status === 'Payment Submitted' || h.status === 'Pending BFP');
 
-  // Detect if assessment has already been published to avoid duplicate publish actions
-  const hasPublishedAssessment = (app.workflowHistory || []).some(h => {
-    const c = (h.comments || '').toLowerCase();
-    const s = (h.status || '').toLowerCase();
-    const looksLikeAssessment = c.includes('assessment') || c.includes('fees');
-    const looksLikePostAssessmentStatus = s === 'payment pending' || s === 'pending meo';
-    return looksLikeAssessment && looksLikePostAssessmentStatus;
-  });
-
-  // Normalize UI status so Occupancy behaves like Building in the admin workflow
+  // Determine app type
   const isOccupancy = app.applicationType === 'Occupancy' || !app.box1;
-  const uiStatus = (isOccupancy && app.status === 'Pending MEO' && hasPublishedAssessment)
-    ? 'Payment Pending'
-    : app.status;
 
-  const step2Label = hasPublishedAssessment
-    ? 'Next Action: Await Client Payment / Continue Workflow'
-    : 'Step 2: Assess Fees or flag documents';
+  // Structural check for Occupancy assessment being published (no status aliasing, no comments heuristics)
+  const occupancyAssessmentPublished = isOccupancy && (
+    (Array.isArray(app.feesDetails?.fees) && app.feesDetails.fees.length > 0) ||
+    (app.feesDetails?.totalAmountDue > 0)
+  );
 
   // Wrapper to ensure outgoing status is valid for specific app type
   const update = (statusArg, payload) => onUpdate(appId, normalizeStatusForApp(app, statusArg), payload);
@@ -147,13 +137,24 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
         
         return (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">{step2Label}</p>
-            {!hasPublishedAssessment && (
-              <button onClick={onSaveAssessment} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Save & Publish Assessment</button>
+            {!isOccupancy && (
+              <>
+                <p className="text-sm text-gray-600">Step 2: Assess Fees or flag documents</p>
+                <button onClick={onSaveAssessment} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Save & Publish Assessment</button>
+              </>
             )}
-            {hasPublishedAssessment && (
-              <p className="text-xs text-green-700 bg-green-50 border border-green-200 p-2 rounded">Assessment already published.</p>
+
+            {isOccupancy && !occupancyAssessmentPublished && (
+              <>
+                <p className="text-sm text-gray-600">Step 2: Assess Fees or flag documents</p>
+                <button onClick={onSaveAssessment} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Save & Publish Assessment</button>
+              </>
             )}
+
+            {isOccupancy && occupancyAssessmentPublished && (
+              <p className="text-sm text-gray-600">Waiting for client payment...</p>
+            )}
+
             <button onClick={handleReject} className="w-full px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-200">Reject</button>
           </div>
         );
