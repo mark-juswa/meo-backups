@@ -7,7 +7,7 @@ import DocumentChecklist from './DocumentChecklist';
 import ApplicationFormView from './ApplicationFormView';
 import WorkflowHistory from './WorkflowHistory';
 import ConfirmationModal from './ConfirmationModal';
-import { normalizeStatusForApp } from '../../../../utils/statusNormalizer';
+import { normalizeStatusForApp } from '../../../utils/statusNormalizer';
 import { XMarkIcon as XIcon } from '@heroicons/react/24/outline';
 import { getAppIdString } from '../../../utils/idConverter';
 
