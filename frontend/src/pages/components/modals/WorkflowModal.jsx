@@ -7,7 +7,6 @@ import DocumentChecklist from './DocumentChecklist';
 import ApplicationFormView from './ApplicationFormView';
 import WorkflowHistory from './WorkflowHistory';
 import ConfirmationModal from './ConfirmationModal';
-import { normalizeStatusForApp } from '../../../utils/statusNormalizer';
 import { XMarkIcon as XIcon } from '@heroicons/react/24/outline';
 import { getAppIdString } from '../../../utils/idConverter';
 
@@ -80,7 +79,7 @@ export default function WorkflowModal({ role, app, onClose, onUpdate }) {
             rejectionDetails: { comments: '', missingDocuments: [], isResolved: true },
           };
 
-      onUpdate(appId, normalizeStatusForApp(app, 'Payment Pending'), payload);
+      onUpdate(appId, 'Payment Pending', payload);
     } finally {
       // allow UI to re-enable; onUpdate is async in parent
       setTimeout(() => setIsSavingAssessment(false), 400);

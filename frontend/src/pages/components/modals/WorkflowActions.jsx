@@ -1,6 +1,5 @@
 import React from 'react';
 import { getAppIdString } from '../../../utils/idConverter';
-import { normalizeStatusForApp } from '../../../utils/statusNormalizer';
 
 export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, onSaveAssessment }) {
   const status = app.status;
@@ -11,14 +10,9 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
   // Determine app type
   const isOccupancy = app.applicationType === 'Occupancy' || !app.box1;
 
-  // Structural check for Occupancy assessment being published (no status aliasing, no comments heuristics)
-  const occupancyAssessmentPublished = isOccupancy && (
-    (Array.isArray(app.feesDetails?.fees) && app.feesDetails.fees.length > 0) ||
-    (app.feesDetails?.totalAmountDue > 0)
-  );
 
   // Wrapper to ensure outgoing status is valid for specific app type
-  const update = (statusArg, payload) => onUpdate(appId, normalizeStatusForApp(app, statusArg), payload);
+  const update = (statusArg, payload) => onUpdate(appId, statusArg, payload);
   
   // Check history to see what has been done
   const hasBfpApproval = app.workflowHistory?.some(h => h.comments?.includes('BFP Inspection Passed'));
@@ -137,22 +131,14 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
         
         return (
           <div className="space-y-3">
-            {!isOccupancy && (
+            {status === 'Pending MEO' && (
               <>
                 <p className="text-sm text-gray-600">Step 2: Assess Fees or flag documents</p>
                 <button onClick={onSaveAssessment} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Save & Publish Assessment</button>
               </>
             )}
-
-            {isOccupancy && !occupancyAssessmentPublished && (
-              <>
-                <p className="text-sm text-gray-600">Step 2: Assess Fees or flag documents</p>
-                <button onClick={onSaveAssessment} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Save & Publish Assessment</button>
-              </>
-            )}
-
-            {isOccupancy && occupancyAssessmentPublished && (
-              <p className="text-sm text-gray-600">Waiting for client payment...</p>
+            {status !== 'Pending MEO' && (
+              <p className="text-sm text-gray-600">Waiting for client payment or next processing step...</p>
             )}
 
             <button onClick={handleReject} className="w-full px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-200">Reject</button>
