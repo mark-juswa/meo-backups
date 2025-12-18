@@ -1,6 +1,6 @@
 import React from 'react';
 import { getAppIdString } from '../../../utils/idConverter';
-import { normalizeStatusForApp } from '../../../../utils/statusNormalizer';
+import { normalizeStatusForApp } from '../../../utils/statusNormalizer';
 
 export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, onSaveAssessment }) {
   const status = app.status;
