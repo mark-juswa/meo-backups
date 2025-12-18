@@ -137,7 +137,7 @@ const Home = () => {
     }
   };
 
-  const steps = getStepsData(tTracker);
+  const steps = getStepsData(tTracker, activeApplication?.applicationType === 'Occupancy' || activeApplication?.status === 'Permit Issued' || activeApplication?.status === 'Approved');
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-12 md:py-20">
@@ -166,11 +166,11 @@ const Home = () => {
                   }}>
                 </div>
                 
-                {steps.map((step) => (
+                {getStepsData(tTracker, activeApplication?.applicationType === 'Occupancy' || activeApplication?.status === 'Permit Issued' || activeApplication?.status === 'Approved').map((step) => (
                   <StepItem 
                     key={step.number}
                     step={step}
-                    currentStepNum={mapDbStatusToStep(activeApplication.status)}
+                    currentStepNum={mapDbStatusToStep(activeApplication.status, activeApplication)}
                     dbStatus={activeApplication.status}
                     application={activeApplication} 
                     onOpenDetails={() => setShowDetailsModal(true)}

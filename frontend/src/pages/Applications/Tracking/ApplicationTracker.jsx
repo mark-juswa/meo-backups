@@ -4,8 +4,8 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useLanguage } from '../../../context/LanguageContext.jsx';
 import translations from '../../../lang/translations.js';
 
-// Convert stepsData to a function that takes 't' (translations)
-export const getStepsData = (t) => [
+// Convert stepsData to a function that takes 't' (translations) and occupancy flag
+export const getStepsData = (t, includeOccupancy = false) => [
   {
     number: 1,
     statusText: t.steps[1].status,
@@ -61,11 +61,69 @@ export const getStepsData = (t) => [
       title: (status) => `${t.actions.status}: ${status}`,
       buttonText: (status) => t.actions.downloadPermit
     }
-  }
+  },
+  // Occupancy stage (visible after Building Permit Issued)
+  ...(includeOccupancy ? [
+    {
+      number: 5,
+      statusText: (t.steps?.[5]?.status) || 'Occupancy Application Submitted',
+      description: (t.steps?.[5]?.description) || 'Your Occupancy Application has been submitted.',
+      action: {
+        title: () => (t.actions?.status || 'Status'),
+        buttonText: () => (t.actions?.viewDetails || 'View Details'),
+        isModalTrigger: true
+      }
+    },
+    {
+      number: 6,
+      statusText: (t.steps?.[6]?.status) || 'Occupancy Review',
+      description: (t.steps?.[6]?.description) || 'Your Occupancy Application is under review by the LGU.',
+      action: {
+        title: (status) => `${t.actions?.status || 'Status'}: ${status}`,
+        buttonText: () => (t.actions?.viewDetails || 'View Details'),
+        isModalTrigger: true
+      }
+    },
+    {
+      number: 7,
+      statusText: (t.steps?.[7]?.status) || 'Occupancy Permit Issued',
+      description: (t.steps?.[7]?.description) || 'Your Occupancy Permit has been issued.',
+      action: {
+        title: (status) => `${t.actions?.status || 'Status'}: ${status}`,
+        buttonText: () => (t.actions?.downloadPermit || 'Download Permit'),
+        hideButton: true
+      }
+    }
+  ] : [])
 ];
 
-export const mapDbStatusToStep = (dbStatus) => {
+export const mapDbStatusToStep = (dbStatus, application) => {
   if (!dbStatus) return 0;
+  const isOccupancy = application?.applicationType === 'Occupancy';
+  // Occupancy mapping extends steps 5-7 without backend changes
+  if (isOccupancy) {
+    switch (dbStatus) {
+      case 'Submitted':
+      case 'Occupancy Submitted':
+        return 5;
+      case 'Pending Review':
+      case 'Pending MEO':
+      case 'Pending BFP':
+      case 'Pending Mayor':
+      case 'For Revision':
+      case 'Rejected':
+      case 'Payment Pending':
+      case 'Payment Submitted':
+        return 6;
+      case 'Approved':
+      case 'Permit Issued':
+      case 'Occupancy Approved':
+      case 'Occupancy Permit Issued':
+        return 7;
+      default:
+        return 5;
+    }
+  }
   switch (dbStatus) {
     case 'Submitted': return 1;
     case 'Pending MEO':

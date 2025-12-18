@@ -215,11 +215,11 @@ const TrackApplication = () => {
     }
   }, [id]);
 
-  const currentStepNum = mapDbStatusToStep(application?.status);
+  const currentStepNum = mapDbStatusToStep(application?.status, application);
   const isPermitIssued = application?.status === 'Permit Issued' || application?.status === 'Approved';
 
 
-  const steps = getStepsData(translations[language].tracking);
+  const steps = getStepsData(translations[language].tracking, application?.applicationType === 'Occupancy' || isPermitIssued);
 
   return (
     <div className="antialiased text-gray-800 bg-gray-100 min-h-screen">
