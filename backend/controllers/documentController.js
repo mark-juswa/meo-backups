@@ -134,5 +134,64 @@ export const uploadRevision = async (req, res) => {
     }
 };
 
+// ADMIN UPLOADS (reuses existing system)
+export const uploadAdminDocuments = async (req, res) => {
+ try {
+   const { appId, applicationType, uploadedByRole, requirementName } = req.body;
+   if (!req.files || req.files.length === 0) {
+     return res.status(400).json({ success: false, message: 'No files uploaded.' });
+   }
+   if (!['MEO','BFP','MAYOR'].includes(uploadedByRole)) {
+     return res.status(400).json({ success: false, message: 'Invalid uploadedByRole.' });
+   }
+
+   const Model = getModel(applicationType);
+   const application = await Model.findById(appId);
+   if (!application) return res.status(404).json({ success: false, message: 'Application not found.' });
+
+   let nextIndex = await getNextOriginalIndex(application._id);
+   const created = [];
+   for (const file of req.files) {
+     const doc = await Document.create({
+       applicationId: application._id,
+       applicationType,
+       requirementName: requirementName || `${uploadedByRole} Document`,
+       fileName: file.originalname,
+       fileContent: fileToBase64(file),
+       mimeType: file.mimetype,
+       fileSize: file.size,
+       originalIndex: nextIndex++,
+       uploadedBy: 'admin',
+       uploadedByRole,
+     });
+     created.push(doc);
+   }
+
+   return res.status(200).json({ success: true, documents: created });
+ } catch (err) {
+   console.error('UPLOAD ADMIN DOCS ERROR:', err);
+   return res.status(500).json({ success: false, message: 'Server error.' });
+ }
+};
+
+// LIST DOCUMENTS BY APP (optional filter by role)
+export const listDocumentsByApp = async (req, res) => {
+ try {
+   const { appId, applicationType, role } = req.query;
+   if (!appId || !applicationType) {
+     return res.status(400).json({ success: false, message: 'appId and applicationType are required' });
+   }
+
+   const filter = { applicationId: appId, applicationType };
+   if (role && ['MEO','BFP','MAYOR'].includes(role)) filter.uploadedByRole = role;
+
+   const docs = await Document.find(filter).sort({ originalIndex: 1, uploadedAt: 1 });
+   return res.status(200).json({ success: true, documents: docs });
+ } catch (err) {
+   console.error('LIST DOCS BY APP ERROR:', err);
+   return res.status(500).json({ success: false, message: 'Server error.' });
+ }
+};
+
 
 
