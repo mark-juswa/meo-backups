@@ -113,6 +113,54 @@ const OccupancyApplication = () => {
     }
   }, [auth.user]);
 
+  // Auto-proceed when arriving with buildingId in the route
+  useEffect(() => {
+    const autoProceed = async () => {
+      if (!buildingId) return;
+      // Set refs from route param
+      setSetupData(prev => ({ ...prev, buildingPermitRef: buildingId }));
+      setFormData(prev => ({ ...prev, buildingPermitReferenceNo: buildingId }));
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await axios.get(`/api/applications/track/${buildingId}`, {
+          headers: { Authorization: `Bearer ${auth.accessToken}` }
+        });
+        const app = res.data?.application;
+        if (app?.box1) {
+          setFormData(prev => ({
+            ...prev,
+            buildingPermitReferenceNo: buildingId,
+            applicationKind: setupData.applicationKind,
+            ownerDetails: {
+              ...prev.ownerDetails,
+              lastName: app.box1.owner?.lastName || prev.ownerDetails.lastName,
+              givenName: app.box1.owner?.firstName || prev.ownerDetails.givenName,
+              middleInitial: app.box1.owner?.middleInitial || prev.ownerDetails.middleInitial,
+              address: `${app.box1.enterprise?.address?.no ? app.box1.enterprise.address.no + ' ' : ''}${app.box1.enterprise?.address?.street || ''}, ${app.box1.enterprise?.address?.barangay || ''}, ${app.box1.enterprise?.address?.city || ''}`.trim(),
+              zip: app.box1.enterprise?.address?.zip || prev.ownerDetails.zip,
+              telNo: app.box1.enterprise?.address?.telNo || prev.ownerDetails.telNo,
+            },
+            projectDetails: {
+              ...prev.projectDetails,
+              projectName: app.box1.enterprise?.projectTitle || prev.projectDetails.projectName,
+              projectLocation: `${app.box1.location?.street || ''}, ${app.box1.location?.barangay || ''}, ${app.box1.location?.city || ''}`.trim(),
+              occupancyUse: app.box1.occupancy?.classified || prev.projectDetails.occupancyUse,
+            }
+          }));
+          setCurrentStep(1);
+          setSetupData(prev => ({ ...prev, isSetupComplete: true }));
+        }
+      } catch (err) {
+        console.error(err);
+        setError(err.response?.data?.message || 'Building permit not found for the provided reference number.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    autoProceed();
+  }, [buildingId, auth.accessToken]);
+
   // handlers
   const handlePermitInfoChange = (e) =>
     setFormData(prev => ({ ...prev, permitInfo: { ...prev.permitInfo, [e.target.name]: e.target.value } }));

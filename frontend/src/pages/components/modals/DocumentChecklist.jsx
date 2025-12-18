@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   DocumentTextIcon, 
   ArrowDownTrayIcon, 
@@ -9,8 +9,47 @@ import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
 import AdminChecklist from './AdminChecklist';
 
 export default function DocumentChecklist({ app, role, onUpdate }) {
+  // If this is an Occupancy application and it references a Building application,
+  // fetch that building application's documents and payment proof for view-only display.
+  const [buildingDocs, setBuildingDocs] = useState([]);
+  const [buildingAppId, setBuildingAppId] = useState('');
+  const [buildingPayment, setBuildingPayment] = useState(null);
+  const [buildingPermitNo, setBuildingPermitNo] = useState('');
+  const [loadingBuildingRefs, setLoadingBuildingRefs] = useState(false);
+
   const axiosPrivate = useAxiosPrivate();
   const uploadedDocs = app.documents || [];
+
+  // Derived building reference used by Occupancy to link back to Building application
+  const buildingRef = app.buildingPermitIdentifier || app.buildingPermitReferenceNo || app.permitInfo?.buildingPermitNo || '';
+  const isOccupancy = (app.applicationType === 'Occupancy');
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchBuildingData = async () => {
+      if (!isOccupancy || !buildingRef) return;
+      try {
+        setLoadingBuildingRefs(true);
+        const res = await axiosPrivate.get(`/api/applications/track/${buildingRef}`);
+        const bApp = res.data?.application;
+        if (!cancelled && bApp) {
+          setBuildingDocs(bApp.documents || []);
+          setBuildingPayment(bApp.paymentDetails || null);
+          setBuildingPermitNo(bApp.permit?.permitNumber || bApp.referenceNo || buildingRef);
+          // Store building app id for file viewing
+          setBuildingAppId(
+            typeof bApp._id === 'string' ? bApp._id : (bApp._id?.$oid || bApp._id?.toString?.() || '')
+          );
+        }
+      } catch (e) {
+        console.warn('Unable to load linked Building application for occupancy:', e?.response?.data || e.message);
+      } finally {
+        if (!cancelled) setLoadingBuildingRefs(false);
+      }
+    };
+    fetchBuildingData();
+    return () => { cancelled = true; };
+  }, [isOccupancy, buildingRef]);
   const missingDocs = app.rejectionDetails?.missingDocuments || [];
   const paymentProof = app.paymentDetails?.proofOfPaymentFile;
 
@@ -149,6 +188,77 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
   return (
     <div>
       <h4 className="text-lg font-semibold border-b pb-2 mb-3 text-gray-800">Document Checklist</h4>
+
+      {/* Building Permit Documents (View-Only, referenced) */}
+      {isOccupancy && buildingRef && (
+        <div className="space-y-3 mb-8">
+          <h5 className="text-sm font-bold text-gray-600 uppercase tracking-wider mb-2">Documents from Building Permit Application</h5>
+          {loadingBuildingRefs ? (
+            <p className="text-sm text-gray-400 p-3 italic border border-dashed border-gray-200 rounded-lg text-center">Loading building permit documents...</p>
+          ) : (
+            <>
+              {buildingPayment?.proofOfPaymentFile && (
+                <div className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg">
+                  <div className="flex items-center">
+                    <DocumentTextIcon className="w-5 h-5 text-green-500 mr-3"/>
+                    <span className="font-medium text-sm text-gray-700">Proof of Payment (Building Permit)</span>
+                  </div>
+                  <button 
+                    onClick={async () => {
+                      if (!buildingAppId) return alert('Linked Building Application not found');
+                      try {
+                        const response = await axiosPrivate.get(`/api/applications/${buildingAppId}/payment-proof`, { responseType: 'blob' });
+                        const contentType = response.headers['content-type'] || 'application/octet-stream';
+                        const blob = new Blob([response.data], { type: contentType });
+                        const url = window.URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+                      } catch (e) {
+                        alert('Failed to load payment proof.');
+                      }
+                    }}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1 rounded-md border-none cursor-pointer"
+                  >
+                    View
+                  </button>
+                </div>
+              )}
+              {buildingDocs.length === 0 && (
+                <p className="text-sm text-gray-400 p-3 italic border border-dashed border-gray-200 rounded-lg text-center">
+                  No building permit documents found.
+                </p>
+              )}
+              {buildingDocs.map((doc, idx) => (
+                <div key={idx} className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg">
+                  <div className="flex items-center">
+                    <DocumentTextIcon className="w-5 h-5 text-gray-400 mr-3"/>
+                    <span className="font-medium text-sm text-gray-700">{doc.requirementName}</span>
+                  </div>
+                  <button 
+                    onClick={async () => {
+                      if (!buildingAppId) return alert('Linked Building Application not found');
+                      try {
+                        const response = await axiosPrivate.get(`/api/applications/${buildingAppId}/documents/${idx}/file`, { responseType: 'blob' });
+                        const contentType = response.headers['content-type'] || 'application/octet-stream';
+                        const blob = new Blob([response.data], { type: contentType });
+                        const url = window.URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+                      } catch (e) {
+                        alert('Failed to load document.');
+                      }
+                    }}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1 rounded-md border-none cursor-pointer"
+                  >
+                    View
+                  </button>
+                </div>
+              ))}
+              <p className="text-xs text-gray-500 italic mt-2">These are read-only references to the original Building Permit files. Re-uploads are not allowed here.</p>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Original Submission */}
       <div className="space-y-3 mb-8">

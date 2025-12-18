@@ -15,6 +15,7 @@ import { useLanguage } from '../../../context/LanguageContext.jsx';
 import translations from '../../../lang/translations.js';
 
 const PermitDashboard = ({ application }) => {
+  const navigate = useNavigate();
   const { language } = useLanguage();
   const t = translations[language].tracking.actions;
 
@@ -78,6 +79,19 @@ const PermitDashboard = ({ application }) => {
                 <p className="text-xs text-green-700 uppercase tracking-wide font-semibold mb-1">BLDG. PERMIT NO.</p>
                 <div className="text-3xl font-mono font-black text-green-800 tracking-widest">{application.permit.permitNumber}</div>
                 <p className="text-xs text-gray-600 mt-2">Issued: {new Date(application.permit.issuedAt).toLocaleDateString()}</p>
+              </div>
+            )}
+
+            {/* Proceed to Occupancy Application Button */}
+            {application.status === 'Permit Issued' && application.permit?.permitNumber && (
+              <div className="mt-6 flex justify-center">
+                <button
+                  onClick={() => navigate(`/occupancy-application/${application.referenceNo}`)}
+                  className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm"
+                  title="Proceed to Occupancy Application"
+                >
+                  Proceed to Occupancy Application
+                </button>
               </div>
             )}
           </div>
