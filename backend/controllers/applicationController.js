@@ -539,169 +539,118 @@ export const updateAdminChecklist = async (req, res) => {
 
 // LOGIC FOR UPDATING APPLICATION STATUS (ADMIN ONLY) WITH RETRY LOGIC
 export const updateApplicationStatus = async (req, res) => {
-    const MAX_RETRIES = 3;
-    let retryCount = 0;
+    try {
+        const { id } = req.params;
+        const { status, comments, missingDocuments, box5, box6, assessmentDetails, feesDetails } = req.body;
+        const adminUserId = req.user.userId;
 
-    while (retryCount < MAX_RETRIES) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-        
-        try {
-            const { id } = req.params;
-            const { status, comments, missingDocuments, box5, box6 } = req.body;
-            const adminUserId = req.user.userId;
+        // Valid status values (unchanged)
+        const validStatuses = [
+            'Submitted',
+            'Pending MEO',
+            'Pending BFP', 
+            'Pending Mayor',
+            'Approved',
+            'Rejected',
+            'Payment Pending',
+            'Payment Submitted',
+            'Permit Issued'
+        ];
 
-            // Valid status values
-            const validStatuses = [
-                'Submitted',
-                'Pending MEO',
-                'Pending BFP', 
-                'Pending Mayor',
-                'Approved',
-                'Rejected',
-                'Payment Pending',
-                'Payment Submitted',
-                'Permit Issued'
-            ];
+        // Determine model and load current doc (lean for performance)
+        let application = await BuildingApplication.findById(id).lean();
+        let Model = BuildingApplication;
+        if (!application) {
+            application = await OccupancyApplication.findById(id).lean();
+            Model = OccupancyApplication;
+        }
+        if (!application) {
+            return res.status(404).json({ message: 'Application not found' });
+        }
 
-            let application = await BuildingApplication.findById(id).session(session);
-            if (!application) {
-                application = await OccupancyApplication.findById(id).session(session);
-            }
-            if (!application) {
-                await session.abortTransaction();
-                session.endSession();
-                return res.status(404).json({ message: 'Application not found' });
-            }
-
-            // CHECK FOR UNRESOLVED FLAGS BEFORE ALLOWING PROGRESSION
-            const hasUnresolvedFlags = application.rejectionDetails?.missingDocuments?.length > 0 || 
-                                       application.rejectionDetails?.isResolved === false;
-            
-            // Define statuses that represent workflow progression (not rejection/correction)
-            const progressionStatuses = [
-                'Pending BFP',
-                'Pending Mayor', 
-                'Approved',
-                'Permit Issued'
-            ];
-            
-            // If trying to progress workflow and there are unresolved flags, block it
-            if (status && progressionStatuses.includes(status) && hasUnresolvedFlags) {
-                await session.abortTransaction();
-                session.endSession();
-                return res.status(400).json({ 
-                    message: 'Cannot proceed to next step: There are unresolved flagged items.',
-                    details: `Please resolve all flagged documents before changing status to "${status}".`,
-                    unresolvedFlags: application.rejectionDetails?.missingDocuments || []
-                });
-            }
-
-            // Validate and normalize status
-            if (status) {
-                // Handle common status mapping/normalization
-                let normalizedStatus = status;
-                
-                // Map 'Pending' to 'Pending MEO' (default pending state)
-                if (status === 'Pending') {
-                    normalizedStatus = 'Pending MEO';
-                }
-                
-                // Validate status
-                if (!validStatuses.includes(normalizedStatus)) {
-                    await session.abortTransaction();
-                    session.endSession();
-                    return res.status(400).json({ 
-                        message: `Invalid status value: ${status}. Valid values are: ${validStatuses.join(', ')}` 
-                    });
-                }
-                
-                application.status = normalizedStatus;
-            }
-
-            if (status === 'For Correction' || status === 'Rejected') {
-                application.rejectionDetails = {
-                    comments: comments || 'No comments provided.',
-                    missingDocuments: missingDocuments || [],
-                    isResolved: false, 
-                };
-            }
-     
-            // Clear rejection details
-            if (status === 'Submitted' || status === 'Pending MEO' || status === 'Payment Pending') {
-                 application.rejectionDetails = {
-                    comments: '',
-                    missingDocuments: [],
-                    isResolved: true,
-                };
-            }
-
-            if (req.body.rejectionDetails) {
-                application.rejectionDetails = req.body.rejectionDetails;
-            }
-            if (req.body.adminChecklist) {
-                application.adminChecklist = req.body.adminChecklist;
-            }
-
-            if (box5) application.box5 = box5;
-            if (box6) application.box6 = box6;
-
-            if (status === 'Permit Issued' && !application.permit?.permitNumber) {
-                const permitNumber = await generateFinalPermitNumber(application.applicationType);
-                application.permit = {
-                    permitNumber: permitNumber,
-                    issuedAt: new Date(),
-                    issuedBy: adminUserId
-                };
-            }
-
-            // Add to workflow history
-            if (status) {
-                 application.workflowHistory.push({
-                    status: application.status, // Use the normalized status
-                    comments: comments || `Status updated to ${application.status} by admin.`,
-                    updatedBy: adminUserId,
-                    timestamp: new Date(),
-                });
-            }
-
-            const updatedApplication = await application.save({ session });
-            await session.commitTransaction();
-            session.endSession();
-
-            const populatedApp = await updatedApplication.populate('applicant', 'first_name last_name');
-
-            return res.status(200).json({ 
-                message: 'Application updated successfully',
-                application: populatedApp
-            });
-
-        } catch (error) {
-            await session.abortTransaction();
-            session.endSession();
-            
-            // Check if it's a write conflict error
-            if (error.code === 112 && retryCount < MAX_RETRIES - 1) {
-                retryCount++;
-                console.log(`Write conflict detected. Retrying... (${retryCount}/${MAX_RETRIES})`);
-                // Wait a bit before retrying (exponential backoff)
-                await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
-                continue;
-            }
-            
-            console.error('Error updating application status:', error);
-            return res.status(500).json({ 
-                message: 'Server error', 
-                details: error.message,
-                retries: retryCount
+        // Business validations preserved
+        const hasUnresolvedFlags = application.rejectionDetails?.missingDocuments?.length > 0 || 
+                                   application.rejectionDetails?.isResolved === false;
+        const progressionStatuses = ['Pending BFP','Pending Mayor','Approved','Permit Issued'];
+        if (status && progressionStatuses.includes(status) && hasUnresolvedFlags) {
+            return res.status(400).json({ 
+                message: 'Cannot proceed to next step: There are unresolved flagged items.',
+                details: `Please resolve all flagged documents before changing status to "${status}".`,
+                unresolvedFlags: application.rejectionDetails?.missingDocuments || []
             });
         }
-    }
 
-    return res.status(500).json({ 
-        message: 'Failed to update application status after multiple retries',
-        retries: MAX_RETRIES
-    });
+        // Normalize and validate status
+        let normalizedStatus = status;
+        if (normalizedStatus === 'Pending') normalizedStatus = 'Pending MEO';
+        if (normalizedStatus && !validStatuses.includes(normalizedStatus)) {
+            return res.status(400).json({ 
+                message: `Invalid status value: ${status}. Valid values are: ${validStatuses.join(', ')}` 
+            });
+        }
+
+        // Build atomic update
+        const now = new Date();
+        const setObj = { updatedAt: now };
+        if (normalizedStatus) setObj.status = normalizedStatus;
+
+        // Building-only fields
+        if (Model === BuildingApplication) {
+            if (box5) setObj.box5 = box5;
+            if (box6) setObj.box6 = box6;
+        }
+        // Occupancy-only fields (only set if provided, schema-safe)
+        if (Model === OccupancyApplication) {
+            if (assessmentDetails) setObj.assessmentDetails = assessmentDetails;
+            if (feesDetails) setObj.feesDetails = feesDetails;
+        }
+
+        // Rejection details handling
+        if (normalizedStatus === 'For Correction' || normalizedStatus === 'Rejected') {
+            setObj.rejectionDetails = {
+                comments: comments || 'No comments provided.',
+                missingDocuments: missingDocuments || [],
+                isResolved: false,
+            };
+        }
+        if (normalizedStatus === 'Submitted' || normalizedStatus === 'Pending MEO' || normalizedStatus === 'Payment Pending') {
+            setObj.rejectionDetails = { comments: '', missingDocuments: [], isResolved: true };
+        }
+        if (req.body.rejectionDetails) setObj.rejectionDetails = req.body.rejectionDetails;
+        if (req.body.adminChecklist) setObj.adminChecklist = req.body.adminChecklist;
+
+        // Permit issuance (only if not already issued)
+        if (normalizedStatus === 'Permit Issued' && !(application.permit && application.permit.permitNumber)) {
+            const permitNumber = await generateFinalPermitNumber(application.applicationType);
+            setObj['permit.permitNumber'] = permitNumber;
+            setObj['permit.issuedAt'] = now;
+            setObj['permit.issuedBy'] = adminUserId;
+        }
+
+        const pushObj = {};
+        if (normalizedStatus) {
+            pushObj.workflowHistory = {
+                status: normalizedStatus,
+                comments: comments || `Status updated to ${normalizedStatus} by admin.`,
+                updatedBy: adminUserId,
+                timestamp: now,
+            };
+        }
+
+        const updateDoc = Object.keys(pushObj).length > 0
+            ? { $set: setObj, $push: pushObj }
+            : { $set: setObj };
+
+        const updated = await Model.findByIdAndUpdate(id, updateDoc, { new: true });
+        if (!updated) return res.status(404).json({ message: 'Application not found' });
+
+        const populatedApp = await updated.populate('applicant', 'first_name last_name');
+        return res.status(200).json({ message: 'Application updated successfully', application: populatedApp });
+
+    } catch (error) {
+        console.error('Error updating application status (atomic):', error);
+        return res.status(500).json({ message: 'Server error', details: error.message });
+    }
 };
 
 

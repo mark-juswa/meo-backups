@@ -51,29 +51,40 @@ export default function WorkflowModal({ role, app, onClose, onUpdate }) {
   };
 
   // Save assessment and move status (used by MEO)
+  const [isSavingAssessment, setIsSavingAssessment] = useState(false);
   const saveAndPublishAssessment = () => {
-    if (!app?._id) return;
-    
+    if (!app?._id || isSavingAssessment) return;
+
     // Check if there are unresolved flags
     const hasUnresolvedFlags = app.rejectionDetails?.missingDocuments?.length > 0;
-    
+
     if (hasUnresolvedFlags) {
       alert('Cannot publish assessment: There are unresolved flagged issues. Please resolve all flags in the "Details & Checklist" tab before publishing.');
       return;
     }
-    
-    // Clear rejection details and publish assessment
-    onUpdate(appId, normalizeStatusForApp(app, 'Payment Pending'), {
-      box5: assessmentData.box5,
-      box6: assessmentData.box6,
-      comments: 'Assessment fees calculated and published for payment.',
-      // Clear rejection details
-      rejectionDetails: {
-        comments: '',
-        missingDocuments: [],
-        isResolved: true
-      }
-    });
+
+    setIsSavingAssessment(true);
+    try {
+      const isOccupancy = app.applicationType === 'Occupancy' || !app.box1;
+
+      // For Occupancy, do NOT send box5/box6 (not part of the schema). Keep payload minimal.
+      const payload = isOccupancy
+        ? {
+            comments: 'Assessment noted.',
+            rejectionDetails: { comments: '', missingDocuments: [], isResolved: true },
+          }
+        : {
+            box5: assessmentData.box5,
+            box6: assessmentData.box6,
+            comments: 'Assessment fees calculated and published for payment.',
+            rejectionDetails: { comments: '', missingDocuments: [], isResolved: true },
+          };
+
+      onUpdate(appId, normalizeStatusForApp(app, 'Payment Pending'), payload);
+    } finally {
+      // allow UI to re-enable; onUpdate is async in parent
+      setTimeout(() => setIsSavingAssessment(false), 400);
+    }
   };
 
   return (
