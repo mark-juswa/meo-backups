@@ -9,6 +9,17 @@ const getModel = (type) => {
     throw new Error("Invalid application type.");
 };
 
+// Helper to convert file to Base64
+const fileToBase64 = (file) => file.buffer.toString('base64');
+
+// Compute next originalIndex per application for stable ordering
+const getNextOriginalIndex = async (applicationId) => {
+  const last = await Document.find({ applicationId }).sort({ originalIndex: -1 }).limit(1);
+  if (!last || last.length === 0) return 0;
+  const lastIdx = typeof last[0].originalIndex === 'number' ? last[0].originalIndex : 0;
+  return lastIdx + 1;
+};
+
 
 // UPLOAD INITIAL REQUIREMENTS (PDF ONLY)
 
@@ -28,16 +39,19 @@ export const uploadRequirements = async (req, res) => {
         if (!application)
             return res.status(404).json({ success: false, message: "Application not found." });
 
-        const newDoc = new Document({
-            application: appId,
+        // Save into Document collection (decoupled)
+        const nextIndex = await getNextOriginalIndex(application._id);
+        const newDoc = await Document.create({
+            applicationId: application._id,
+            applicationType,
             requirementName: requirementName || "Requirement",
-            filePath: `/uploads/documents/${req.file.filename}`
+            fileName: req.file.originalname,
+            fileContent: fileToBase64(req.file),
+            mimeType: req.file.mimetype,
+            fileSize: req.file.size,
+            originalIndex: nextIndex,
+            uploadedBy: 'user'
         });
-
-        await newDoc.save();
-
-        application.documents.push(newDoc._id);
-        await application.save();
 
         res.json({
             success: true,
@@ -53,10 +67,7 @@ export const uploadRequirements = async (req, res) => {
 
 // UPLOAD REVISIONS 
 
-// Helper function to convert file to Base64
-const fileToBase64 = (file) => {
-    return file.buffer.toString('base64');
-};
+// (removed duplicate fileToBase64)
 
 export const uploadRevision = async (req, res) => {
     try {
@@ -71,47 +82,50 @@ export const uploadRevision = async (req, res) => {
         
         if (!application) return res.status(404).json({ message: "Application not found." });
 
-        if (!application.documents) application.documents = [];
+        // Store revisions in Document collection (decoupled), preserve originalIndex sequence
+        let nextIndex = await getNextOriginalIndex(application._id);
+        const saved = [];
+        for (const file of req.files) {
+          const doc = await Document.create({
+            applicationId: application._id,
+            applicationType,
+            requirementName: "Revised Checklist/Documents",
+            fileName: file.originalname,
+            fileContent: fileToBase64(file),
+            mimeType: file.mimetype,
+            fileSize: file.size,
+            originalIndex: nextIndex++,
+            uploadedBy: 'user'
+          });
+          saved.push(doc);
+        }
 
-        // Save files as base64 in database (not as file paths)
-        req.files.forEach(file => {
-            application.documents.push({
-                requirementName: "Revised Checklist/Documents",
-                fileName: file.originalname,
-                fileContent: fileToBase64(file),
-                mimeType: file.mimetype,
-                fileSize: file.size,
-                uploadedAt: new Date(),
-                uploadedBy: 'user',
-                status: "Pending"
-            });
-        });
-
+        // Maintain previous behavior: reset status back to MEO/BFP depending on rejection comment
         const lastComment = application.rejectionDetails?.comments || "";
-        
-        if (lastComment.includes("BFP")) {
-            application.status = "Pending BFP"; // Return to BFP
-        } else {
-            application.status = "Pending MEO"; // Default to MEO
-        }
+        const newStatus = lastComment.includes("BFP") ? "Pending BFP" : "Pending MEO";
 
-
-        if (application.rejectionDetails) {
-            application.rejectionDetails.isResolved = true;
-        }
-
-        application.workflowHistory.push({
-            status: application.status, 
-            comments: `User uploaded ${req.files.length} revised document(s).`,
-            timestamp: new Date()
-        });
-
-        await application.save();
+        await Model.findByIdAndUpdate(
+          appId,
+          {
+            $set: {
+              status: newStatus,
+              'rejectionDetails.isResolved': true
+            },
+            $push: {
+              workflowHistory: {
+                status: newStatus,
+                comments: `User uploaded ${req.files.length} revised document(s).`,
+                timestamp: new Date()
+              }
+            }
+          },
+          { new: true }
+        );
 
         return res.status(200).json({
             success: true,
             message: "Revisions uploaded successfully.",
-            application
+            documents: saved
         });
 
     } catch (err) {

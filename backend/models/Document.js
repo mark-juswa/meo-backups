@@ -53,6 +53,12 @@ const DocumentSchema = new mongoose.Schema({
     enum: ['user', 'system', 'admin'],
     default: 'user'
   },
+  uploadedByRole: {
+    type: String,
+    enum: ['MEO', 'BFP', 'MAYOR'],
+    required: false,
+    index: true
+  },
   uploadedAt: {
     type: Date,
     default: Date.now,

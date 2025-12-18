@@ -2,7 +2,9 @@ import express from "express";
 import { documentUpload } from "../middleware/uploadMiddleware.js";
 import {
   uploadRequirements,
-  uploadRevision
+  uploadRevision,
+  uploadAdminDocuments,
+  listDocumentsByApp
 } from "../controllers/documentController.js";
 
 
@@ -19,6 +21,19 @@ router.post(
   "/revision",
   documentUpload.array("files", 10), 
   uploadRevision
+);
+
+// Admin uploads (multiple files)
+router.post(
+  "/admin",
+  documentUpload.array("files", 10),
+  uploadAdminDocuments
+);
+
+// List by application (optional role)
+router.get(
+  "/by-app",
+  listDocumentsByApp
 );
 
 export default router;

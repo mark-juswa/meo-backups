@@ -127,7 +127,9 @@ const PermitDashboard = ({ application }) => {
                  </li>
               )}
               {application.documents && application.documents.length > 0 ? (
-                application.documents.map((doc, index) => (
+                application.documents
+                  .filter(doc => doc.uploadedBy !== 'admin' || (application.status === 'Approved' || application.status === 'Permit Issued'))
+                  .map((doc, index) => (
                   <li key={index} className="flex items-center justify-between p-4 hover:bg-blue-50 transition duration-150 group">
                     <div className="flex items-center overflow-hidden">
                       <div className="p-2 bg-blue-100 rounded-lg mr-3 group-hover:bg-blue-200 transition">

@@ -589,6 +589,42 @@ export const updateApplicationStatus = async (req, res) => {
             });
         }
 
+        // Server-side enforcement of required admin documents before transitions
+        // MEO: Pending MEO -> Pending BFP requires at least one MEO admin document
+        // BFP: Pending BFP -> Pending Mayor requires at least one BFP admin document
+        // MAYOR: Pending Mayor -> Pending MEO requires at least one MAYOR admin document
+        if (Model === OccupancyApplication || Model === BuildingApplication) {
+            const currentStatus = application.status;
+            const nextStatus = normalizedStatus;
+            const applicationType = Model === BuildingApplication ? 'Building' : 'Occupancy';
+            const { default: Document } = await import('../models/Document.js');
+
+            const requireDocs = async (role) => {
+                const count = await Document.countDocuments({
+                    applicationId: application._id,
+                    applicationType,
+                    uploadedBy: 'admin',
+                    uploadedByRole: role
+                });
+                if (count <= 0) {
+                    return res.status(400).json({
+                        message: `Required admin documents missing for ${role}. Upload at least one document before proceeding.`,
+                        role
+                    });
+                }
+            };
+
+            if (currentStatus === 'Pending MEO' && nextStatus === 'Pending BFP') {
+                const result = await requireDocs('MEO'); if (result) return; 
+            }
+            if (currentStatus === 'Pending BFP' && nextStatus === 'Pending Mayor') {
+                const result = await requireDocs('BFP'); if (result) return; 
+            }
+            if (currentStatus === 'Pending Mayor' && nextStatus === 'Pending MEO') {
+                const result = await requireDocs('MAYOR'); if (result) return; 
+            }
+        }
+
         // Build atomic update
         const now = new Date();
         const setObj = { updatedAt: now };
@@ -641,6 +677,7 @@ export const updateApplicationStatus = async (req, res) => {
             ? { $set: setObj, $push: pushObj }
             : { $set: setObj };
 
+        // Enforce admin-doc requirements for transitions (server-side) already checked above
         const updated = await Model.findByIdAndUpdate(id, updateDoc, { new: true });
         if (!updated) return res.status(404).json({ message: 'Application not found' });
 
