@@ -202,15 +202,25 @@ const Home = () => {
                       </span>
                     </div>
 
-                    {/* Proceed button: only relevant after Building permit is issued */}
-                    {String(activeApplication.applicationType).toLowerCase() === 'building' && (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {/* Download/claim button goes to the tracking page (TrackApplication) */}
                       <Link
-                        to={`/occupancy-application/${activeApplication.referenceNo}`}
-                        className="inline-flex items-center justify-center rounded-full bg-blue-600 text-white font-semibold px-6 py-2 text-sm hover:bg-blue-700 transition"
+                        to={`/track/${activeApplication.referenceNo}`}
+                        className="inline-flex items-center justify-center rounded-full bg-white text-blue-700 font-semibold px-6 py-2 text-sm border border-blue-200 hover:bg-blue-50 transition"
                       >
-                        Proceed to Occupancy Application
+                        Download / Claim Permit
                       </Link>
-                    )}
+
+                      {/* Proceed button: only relevant after Building permit is issued */}
+                      {String(activeApplication.applicationType).toLowerCase() === 'building' && (
+                        <Link
+                          to={`/occupancy-application/${activeApplication.referenceNo}`}
+                          className="inline-flex items-center justify-center rounded-full bg-blue-600 text-white font-semibold px-6 py-2 text-sm hover:bg-blue-700 transition"
+                        >
+                          Proceed to Occupancy Application
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
