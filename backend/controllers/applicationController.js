@@ -364,12 +364,12 @@ export const getApplicationByReferenceNo = async (req, res) => {
         if (mongoose.Types.ObjectId.isValid(identifier)) {
             application = await BuildingApplication.findById(identifier)
                 .select('applicationType referenceNo createdAt status workflowHistory box1 box2 box3 box4 box5 box6 rejectionDetails documents permit adminChecklist')
-                .populate('applicant', 'first_name last_name');
+                .populate('applicant', 'first_name last_name email phone_number');
 
             if (!application) {
                 application = await OccupancyApplication.findById(identifier)
                     .select('applicationType referenceNo createdAt status workflowHistory permitInfo ownerDetails projectDetails signatures assessmentDetails feesDetails rejectionDetails documents adminChecklist')
-                    .populate('applicant', 'first_name last_name');
+                    .populate('applicant', 'first_name last_name email phone_number');
             }
         }
 
@@ -379,12 +379,12 @@ export const getApplicationByReferenceNo = async (req, res) => {
 
             application = await BuildingApplication.findOne(query)
                 .select('applicationType referenceNo createdAt status workflowHistory box1 box2 box3 box4 box5 box6 rejectionDetails documents permit adminChecklist')
-                .populate('applicant', 'first_name last_name');
+                .populate('applicant', 'first_name last_name email phone_number');
 
             if (!application) {
                 application = await OccupancyApplication.findOne(query)
                     .select('applicationType referenceNo createdAt status workflowHistory permitInfo ownerDetails projectDetails signatures assessmentDetails feesDetails rejectionDetails documents adminChecklist')
-                    .populate('applicant', 'first_name last_name');
+                    .populate('applicant', 'first_name last_name email phone_number');
             }
         }
 
@@ -406,11 +406,11 @@ export const getApplicationByReferenceNo = async (req, res) => {
 export const getAllApplications = async (req, res) => {
     try {
         const buildingApps = await BuildingApplication.find()
-            .populate('applicant', 'first_name last_name')
+            .populate('applicant', 'first_name last_name email phone_number')
             .sort({ createdAt: -1 });
 
         const occupancyApps = await OccupancyApplication.find()
-            .populate('applicant', 'first_name last_name')
+            .populate('applicant', 'first_name last_name email phone_number')
             .sort({ createdAt: -1 });
 
         const applications = [...buildingApps, ...occupancyApps].sort(
@@ -502,7 +502,7 @@ export const updateAdminChecklist = async (req, res) => {
             await session.commitTransaction();
             session.endSession();
             
-            const populatedApp = await updatedApplication.populate('applicant', 'first_name last_name');
+            const populatedApp = await updatedApplication.populate('applicant', 'first_name last_name email phone_number');
 
             return res.status(200).json({
                 message: 'Checklist updated successfully',
@@ -681,7 +681,7 @@ export const updateApplicationStatus = async (req, res) => {
         const updated = await Model.findByIdAndUpdate(id, updateDoc, { new: true });
         if (!updated) return res.status(404).json({ message: 'Application not found' });
 
-        const populatedApp = await updated.populate('applicant', 'first_name last_name');
+        const populatedApp = await updated.populate('applicant', 'first_name last_name email phone_number');
         return res.status(200).json({ message: 'Application updated successfully', application: populatedApp });
 
     } catch (error) {
