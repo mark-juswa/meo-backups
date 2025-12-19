@@ -138,9 +138,9 @@ const PermitDashboard = ({ application }) => {
                     if (doc?.uploadedBy === 'user') return 'Uploaded by Applicant';
                     if (doc?.uploadedBy === 'system') return 'Uploaded by System';
                     if (doc?.uploadedBy === 'admin') {
-                      if (doc?.uploadedByRole === 'MEO') return 'Uploaded by MEO Admin';
-                      if (doc?.uploadedByRole === 'BFP') return 'Uploaded by BFP Admin';
-                      if (doc?.uploadedByRole === 'MAYOR') return 'Uploaded by Mayor Admin';
+                      if (doc?.uploadedByRole === 'MEO') return 'Uploaded by MEO';
+                      if (doc?.uploadedByRole === 'BFP') return 'Uploaded by BFP';
+                      if (doc?.uploadedByRole === 'MAYOR') return 'Uploaded by Mayor';
                       return 'Uploaded by Admin';
                     }
                     return 'Other Documents';
@@ -156,9 +156,9 @@ const PermitDashboard = ({ application }) => {
                   const orderedGroups = [
                     'Uploaded by Applicant',
                     'Uploaded by System',
-                    'Uploaded by MEO Admin',
-                    'Uploaded by BFP Admin',
-                    'Uploaded by Mayor Admin'
+                    'Uploaded by MEO',
+                    'Uploaded by BFP',
+                    'Uploaded by Mayor'
                   ];
 
                   return orderedGroups

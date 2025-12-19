@@ -75,13 +75,20 @@ const Home = () => {
   const [error, setError] = useState(null);
   const [applications, setApplications] = useState([]);
   const [trackLoading, setTrackLoading] = useState(true);
-  
-  const [activeApplication, setActiveApplication] = useState(null); 
+
+  // For the authoritative flow: BUILDING -> OCCUPANCY (final)
+  const [hasOccupancyApplication, setHasOccupancyApplication] = useState(false);
+  const [isOccupancyPermitIssued, setIsOccupancyPermitIssued] = useState(false);
+
+  const [activeApplication, setActiveApplication] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
     if (!auth?.accessToken) {
       setTrackLoading(false);
+      setHasOccupancyApplication(false);
+      setIsOccupancyPermitIssued(false);
+      setActiveApplication(null);
       return;
     }
 
@@ -105,18 +112,40 @@ const Home = () => {
         setApplications(sortedApps);
 
         if (sortedApps.length > 0) {
-           const latest = sortedApps[0];
-           const isComplete = latest.status === 'Permit Issued' || latest.status === 'Cancelled';
-           
-           if (!isComplete) {
-              try {
-                const detailRes = await axios.get(`/api/applications/track/${latest.referenceNo}`);
-                setActiveApplication(detailRes.data.application);
-              } catch (err) {
-                console.error("Could not fetch full details for tracker", err);
-                setActiveApplication(latest); 
-              }
+           // AUTHORITATIVE CLIENT JOURNEY:
+           // - Track BUILDING until an OCCUPANCY application exists
+           // - Once OCCUPANCY exists, track OCCUPANCY
+           // - Hide tracker ONLY when OCCUPANCY reaches "Permit Issued"
+
+           const latestOccupancy = sortedApps.find(
+             (a) => String(a.applicationType).toLowerCase() === 'occupancy'
+           );
+           const latestBuilding = sortedApps.find(
+             (a) => String(a.applicationType).toLowerCase() === 'building'
+           );
+
+           const occupancyExists = !!latestOccupancy;
+           const occupancyPermitIssued = latestOccupancy?.status === 'Permit Issued';
+           setHasOccupancyApplication(occupancyExists);
+           setIsOccupancyPermitIssued(!!occupancyPermitIssued);
+
+           const toTrack = latestOccupancy || latestBuilding || sortedApps[0];
+
+           if (toTrack && !occupancyPermitIssued) {
+             try {
+               const detailRes = await axios.get(`/api/applications/track/${toTrack.referenceNo}`);
+               setActiveApplication(detailRes.data.application);
+             } catch (err) {
+               console.error("Could not fetch full details for tracker", err);
+               setActiveApplication(toTrack);
+             }
+           } else {
+             // Occupancy is final step; once it reaches Permit Issued, tracker can be hidden/replaced
+             setActiveApplication(null);
            }
+        } else {
+          setHasOccupancyApplication(false);
+          setIsOccupancyPermitIssued(false);
         }
 
       } catch (error) {
@@ -137,7 +166,10 @@ const Home = () => {
     }
   };
 
-  const steps = getStepsData(tTracker, activeApplication?.applicationType === 'Occupancy' || activeApplication?.status === 'Permit Issued' || activeApplication?.status === 'Approved');
+  const steps = getStepsData(
+    tTracker,
+    activeApplication?.status === 'Permit Issued' || activeApplication?.status === 'Approved'
+  );
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-12 md:py-20">
@@ -165,8 +197,8 @@ const Home = () => {
                     zIndex: 0
                   }}>
                 </div>
-                
-                {getStepsData(tTracker, activeApplication?.applicationType === 'Occupancy' || activeApplication?.status === 'Permit Issued' || activeApplication?.status === 'Approved').map((step) => (
+
+                {steps.map((step) => (
                   <StepItem 
                     key={step.number}
                     step={step}
@@ -182,6 +214,20 @@ const Home = () => {
 
       ) : (
         <>
+          {/* HERO/COMPLETION SECTION (shown when there is no active tracker application) */}
+          {isOccupancyPermitIssued && (
+            <div className="mb-16 max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-green-200">
+              <div className="text-center">
+                <h2 className="text-2xl md:text-3xl font-extrabold text-green-800 mb-2">
+                  Process Complete
+                </h2>
+                <p className="text-gray-600">
+                  Your Occupancy Permit has been issued. You can still review your application history below.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* HERO SECTION (Show if walang active na application) */}
           <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-12 md:gap-16">
             <div className="flex justify-center md:justify-start">
@@ -214,8 +260,10 @@ const Home = () => {
             </div>
           </div>
 
-          {/* APPLICATION SECTION (Building and occupancy)*/}
-          <section id="application" className="text-center mt-40">
+          {/* APPLICATION SECTION (Building and occupancy)
+              Hide Apply buttons ONLY WHEN an Occupancy application already exists. */}
+          {!hasOccupancyApplication && (
+            <section id="application" className="text-center mt-40">
             <h2 className="text-2xl md:text-3xl font-extrabold text-blue-900 mb-3">
               {t.applyNewPermit}
             </h2>
@@ -267,7 +315,8 @@ const Home = () => {
                 </div>
               </div>
             </div>
-          </section>
+            </section>
+          )}
         </>
       )}
 
