@@ -1,5 +1,6 @@
 import express from "express";
 import { documentUpload } from "../middleware/uploadMiddleware.js";
+import { verifyToken, verifyRole } from "../middleware/authMiddleware.js";
 import {
   uploadRequirements,
   uploadRevision,
@@ -26,6 +27,8 @@ router.post(
 // Admin uploads (multiple files)
 router.post(
   "/admin",
+  verifyToken,
+  verifyRole(['meoadmin', 'bfpadmin', 'mayoradmin']),
   documentUpload.array("files", 10),
   uploadAdminDocuments
 );
@@ -33,6 +36,7 @@ router.post(
 // List by application (optional role)
 router.get(
   "/by-app",
+  verifyToken,
   listDocumentsByApp
 );
 

@@ -138,6 +138,21 @@ export const uploadRevision = async (req, res) => {
 export const uploadAdminDocuments = async (req, res) => {
  try {
    const { appId, applicationType, uploadedByRole, requirementName } = req.body;
+
+   // Ensure the authenticated admin role matches uploadedByRole
+   const userRole = req.user?.role;
+   const roleMap = {
+     meoadmin: 'MEO',
+     bfpadmin: 'BFP',
+     mayoradmin: 'MAYOR'
+   };
+   const expected = roleMap[userRole];
+   if (!expected) {
+     return res.status(403).json({ success: false, message: 'Access denied. Admin role required.' });
+   }
+   if (uploadedByRole !== expected) {
+     return res.status(403).json({ success: false, message: `Role mismatch. You may only upload ${expected} documents.` });
+   }
    if (!req.files || req.files.length === 0) {
      return res.status(400).json({ success: false, message: 'No files uploaded.' });
    }
@@ -184,6 +199,29 @@ export const listDocumentsByApp = async (req, res) => {
 
    const filter = { applicationId: appId, applicationType };
    if (role && ['MEO','BFP','MAYOR'].includes(role)) filter.uploadedByRole = role;
+
+   // Visibility rule:
+   // - Applicants/public should NOT see admin documents until Approved or Permit Issued.
+   // - Admins can always see.
+   const requesterRole = req.user?.role;
+   const isAdmin = ['meoadmin', 'bfpadmin', 'mayoradmin'].includes(requesterRole);
+
+   if (!isAdmin) {
+     const Model = getModel(applicationType);
+     const application = await Model.findById(appId).select('status applicant').lean();
+     if (!application) return res.status(404).json({ success: false, message: 'Application not found.' });
+
+     const isOwner = application.applicant?.toString?.() === req.user?.userId;
+     if (!isOwner) {
+       return res.status(403).json({ success: false, message: 'Unauthorized access.' });
+     }
+
+     const canSeeAdminDocs = ['Approved', 'Permit Issued'].includes(application.status);
+     if (!canSeeAdminDocs) {
+       // hide all admin docs pre-approval
+       filter.uploadedBy = { $ne: 'admin' };
+     }
+   }
 
    const docs = await Document.find(filter).sort({ originalIndex: 1, uploadedAt: 1 });
    return res.status(200).json({ success: true, documents: docs });

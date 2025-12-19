@@ -592,7 +592,7 @@ export const updateApplicationStatus = async (req, res) => {
         // Server-side enforcement of required admin documents before transitions
         // MEO: Pending MEO -> Pending BFP requires at least one MEO admin document
         // BFP: Pending BFP -> Pending Mayor requires at least one BFP admin document
-        // MAYOR: Pending Mayor -> Pending MEO requires at least one MAYOR admin document
+        // MAYOR: Pending Mayor -> (Approved or Permit Issued or Pending MEO) requires at least one MAYOR admin document
         if (Model === OccupancyApplication || Model === BuildingApplication) {
             const currentStatus = application.status;
             const nextStatus = normalizedStatus;
@@ -620,7 +620,7 @@ export const updateApplicationStatus = async (req, res) => {
             if (currentStatus === 'Pending BFP' && nextStatus === 'Pending Mayor') {
                 const result = await requireDocs('BFP'); if (result) return; 
             }
-            if (currentStatus === 'Pending Mayor' && nextStatus === 'Pending MEO') {
+            if (currentStatus === 'Pending Mayor' && ['Pending MEO','Approved','Permit Issued'].includes(nextStatus)) {
                 const result = await requireDocs('MAYOR'); if (result) return; 
             }
         }
