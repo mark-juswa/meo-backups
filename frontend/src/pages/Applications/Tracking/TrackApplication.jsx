@@ -20,7 +20,7 @@ const PermitDashboard = ({ application }) => {
   const navigate = useNavigate();
 
   const handleViewFile = (applicationId, documentIndex) => {
-     if(!applicationId || documentIndex === undefined) return alert("File not found");
+     if(!applicationId || documentIndex === undefined || documentIndex === null) return alert("File not found");
      const url = `/api/applications/${applicationId}/documents/${documentIndex}/file`;
      window.open(url, '_blank');
   };
@@ -127,30 +127,78 @@ const PermitDashboard = ({ application }) => {
                  </li>
               )}
               {application.documents && application.documents.length > 0 ? (
-                application.documents
-                  .filter(doc => doc.uploadedBy !== 'admin' || (application.status === 'Approved' || application.status === 'Permit Issued'))
-                  .map((doc, index) => (
-                  <li key={index} className="flex items-center justify-between p-4 hover:bg-blue-50 transition duration-150 group">
-                    <div className="flex items-center overflow-hidden">
-                      <div className="p-2 bg-blue-100 rounded-lg mr-3 group-hover:bg-blue-200 transition">
-                          <DocumentTextIcon className="w-5 h-5 text-blue-700" />
-                      </div>
-                      <div className="min-w-0">
-                          <p className="text-sm font-bold text-gray-800 truncate pr-4" title={doc.requirementName}>{doc.requirementName}</p>
-                          <p className="text-xs text-gray-500">{new Date(doc.uploadedAt).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                    <button 
-                        onClick={() => handleViewFile(application._id, index)} 
-                        className="text-xs font-medium flex items-center bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md shadow-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition"
-                    >
-                      <ArrowDownTrayIcon className="w-3 h-3 mr-1.5" /> {t.view}
-                    </button>
-                  </li>
-                ))
+                (() => {
+                  const docs = application.documents;
+                  const docsWithIndices = docs.map((doc, fallbackIndex) => ({
+                    doc,
+                    originalIndex: Number.isInteger(doc?.originalIndex) ? doc.originalIndex : fallbackIndex
+                  }));
+
+                  const groupLabel = (doc) => {
+                    if (doc?.uploadedBy === 'user') return 'Uploaded by Applicant';
+                    if (doc?.uploadedBy === 'system') return 'Uploaded by System';
+                    if (doc?.uploadedBy === 'admin') {
+                      if (doc?.uploadedByRole === 'MEO') return 'Uploaded by MEO Admin';
+                      if (doc?.uploadedByRole === 'BFP') return 'Uploaded by BFP Admin';
+                      if (doc?.uploadedByRole === 'MAYOR') return 'Uploaded by Mayor Admin';
+                      return 'Uploaded by Admin';
+                    }
+                    return 'Other Documents';
+                  };
+
+                  const grouped = docsWithIndices.reduce((acc, item) => {
+                    const label = groupLabel(item.doc);
+                    if (!acc[label]) acc[label] = [];
+                    acc[label].push(item);
+                    return acc;
+                  }, {});
+
+                  const orderedGroups = [
+                    'Uploaded by Applicant',
+                    'Uploaded by System',
+                    'Uploaded by MEO Admin',
+                    'Uploaded by BFP Admin',
+                    'Uploaded by Mayor Admin'
+                  ];
+
+                  return orderedGroups
+                    .filter((g) => (grouped[g] || []).length > 0)
+                    .flatMap((groupName) => [
+                      (
+                        <li key={`${groupName}-heading`} className="px-4 pt-5 pb-2">
+                          <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">{groupName}</p>
+                        </li>
+                      ),
+                      ...(grouped[groupName] || []).map((item) => (
+                        <li key={item.doc?._id || `${item.doc?.fileName || item.doc?.requirementName}-${item.originalIndex}`}
+                            className="flex items-center justify-between p-4 hover:bg-blue-50 transition duration-150 group">
+                          <div className="flex items-center overflow-hidden">
+                            <div className="p-2 bg-blue-100 rounded-lg mr-3 group-hover:bg-blue-200 transition">
+                              <DocumentTextIcon className="w-5 h-5 text-blue-700" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-gray-800 truncate pr-4" title={item.doc?.fileName || item.doc?.requirementName}
+                              >
+                                {item.doc?.fileName || item.doc?.requirementName}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {item.doc?.uploadedAt ? new Date(item.doc.uploadedAt).toLocaleDateString() : 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleViewFile(application._id, item.originalIndex)}
+                            className="text-xs font-medium flex items-center bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md shadow-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition"
+                          >
+                            <ArrowDownTrayIcon className="w-3 h-3 mr-1.5" /> {t.view}
+                          </button>
+                        </li>
+                      ))
+                    ]);
+                })()
               ) : (
                 !application.paymentDetails?.proofOfPaymentFile && (
-                    <li className="p-8 text-center text-gray-500 italic">{t.noDocs}</li>
+                  <li className="p-8 text-center text-gray-500 italic">{t.noDocs}</li>
                 )
               )}
             </ul>
