@@ -198,19 +198,29 @@ export const listDocumentsByApp = async (req, res) => {
    }
 
    const filter = { applicationId: appId, applicationType };
-   if (role && ['MEO','BFP','MAYOR'].includes(role)) filter.uploadedByRole = role;
+
+   // Optional narrow filter by uploadedByRole (used by AdminDocsUploader)
+   if (role && ['MEO', 'BFP', 'MAYOR'].includes(role)) {
+     // Enforce role hierarchy: BFP must not fetch MAYOR docs.
+     // Mayor can fetch MEO/BFP for review, and their own.
+     const requesterRole = req.user?.role;
+     if (requesterRole === 'bfpadmin' && role === 'MAYOR') {
+       return res.status(403).json({ success: false, message: 'BFP is not allowed to view Mayor documents.' });
+     }
+     filter.uploadedByRole = role;
+   }
 
    // Visibility rule:
    // - Applicants/public should NOT see admin documents until Approved or Permit Issued.
-   // - Admins can always see.
+   // - Admins follow role hierarchy.
    const requesterRole = req.user?.role;
    const isAdmin = ['meoadmin', 'bfpadmin', 'mayoradmin'].includes(requesterRole);
 
-   if (!isAdmin) {
-     const Model = getModel(applicationType);
-     const application = await Model.findById(appId).select('status applicant').lean();
-     if (!application) return res.status(404).json({ success: false, message: 'Application not found.' });
+   const Model = getModel(applicationType);
+   const application = await Model.findById(appId).select('status applicant').lean();
+   if (!application) return res.status(404).json({ success: false, message: 'Application not found.' });
 
+   if (!isAdmin) {
      const isOwner = application.applicant?.toString?.() === req.user?.userId;
      if (!isOwner) {
        return res.status(403).json({ success: false, message: 'Unauthorized access.' });
@@ -218,9 +228,20 @@ export const listDocumentsByApp = async (req, res) => {
 
      const canSeeAdminDocs = ['Approved', 'Permit Issued'].includes(application.status);
      if (!canSeeAdminDocs) {
-       // hide all admin docs pre-approval
        filter.uploadedBy = { $ne: 'admin' };
      }
+   } else if (requesterRole === 'bfpadmin') {
+     // BFP admin cannot see Mayor docs
+     filter.$or = [
+       { uploadedBy: { $in: ['user', 'system'] } },
+       { uploadedBy: 'admin', uploadedByRole: { $in: ['MEO', 'BFP'] } }
+     ];
+   } else if (requesterRole === 'mayoradmin') {
+     // Mayor can see user/system + admin docs from MEO/BFP/MAYOR
+     filter.$or = [
+       { uploadedBy: { $in: ['user', 'system'] } },
+       { uploadedBy: 'admin', uploadedByRole: { $in: ['MEO', 'BFP', 'MAYOR'] } }
+     ];
    }
 
    const docs = await Document.find(filter).sort({ originalIndex: 1, uploadedAt: 1 });

@@ -25,6 +25,8 @@ export const enrichApplication = async (application) => {
 
     // Map to embedded document format
     enriched.documents = documents.map(doc => ({
+      _id: doc._id,
+      originalIndex: doc.originalIndex,
       requirementName: doc.requirementName,
       fileName: doc.fileName,
       filePath: doc.filePath,
@@ -32,7 +34,8 @@ export const enrichApplication = async (application) => {
       mimeType: doc.mimeType,
       fileSize: doc.fileSize,
       uploadedAt: doc.uploadedAt,
-      uploadedBy: doc.uploadedBy
+      uploadedBy: doc.uploadedBy,
+      uploadedByRole: doc.uploadedByRole
     }));
 
     // Fetch payment from separate collection

@@ -7,6 +7,7 @@ import path from 'path';
 import { PDFDocument } from 'pdf-lib';
 import { fileURLToPath } from 'url';
 import { enrichApplication, enrichApplications } from '../helpers/applicationAdapter.js';
+import { filterDocumentsForRequester } from '../helpers/documentVisibility.js';
 import { addDocument, replaceDocument, getDocumentByIndex } from '../helpers/documentHelper.js';
 import { submitPayment, getPaymentProof } from '../helpers/paymentHelper.js';
 
@@ -394,6 +395,14 @@ export const getApplicationByReferenceNo = async (req, res) => {
 
         // MODIFIED: Enrich with documents and payment from separate collections
         const enriched = await enrichApplication(application);
+
+        // Apply visibility filtering (admins have role-hierarchy rules; clients/public hide admin docs pre-approval)
+        enriched.documents = filterDocumentsForRequester(
+            enriched.documents,
+            req.user?.role,
+            enriched.status
+        );
+
         res.status(200).json({ application: enriched });
     } catch (error) {
         console.error('Error fetching application by reference number or ID:', error);
@@ -419,7 +428,15 @@ export const getAllApplications = async (req, res) => {
 
         // MODIFIED: Enrich all applications with documents and payments
         const enriched = await enrichApplications(applications);
-        res.status(200).json({ applications: enriched });
+
+        // Apply visibility filtering per admin requester role
+        const requesterRole = req.user?.role;
+        const filtered = enriched.map(app => ({
+            ...app,
+            documents: filterDocumentsForRequester(app.documents, requesterRole, app.status)
+        }));
+
+        res.status(200).json({ applications: filtered });
     } catch (error) {
         console.error('Error fetching all applications:', error);
         res.status(500).json({ message: 'Server error' });

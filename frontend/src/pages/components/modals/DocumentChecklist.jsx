@@ -20,6 +20,44 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
   const axiosPrivate = useAxiosPrivate();
   const uploadedDocs = app.documents || [];
 
+  // Use stable originalIndex from backend when available (prevents documents "disappearing" due to index drift)
+  const docsWithIndices = uploadedDocs.map((doc, fallbackIndex) => ({
+    doc,
+    originalIndex: Number.isInteger(doc?.originalIndex) ? doc.originalIndex : fallbackIndex
+  }));
+
+  const groupLabel = (doc) => {
+    if (doc?.uploadedBy === 'user') return 'Uploaded by Applicant';
+    if (doc?.uploadedBy === 'system') return 'Uploaded by System';
+    if (doc?.uploadedBy === 'admin') {
+      if (doc?.uploadedByRole === 'MEO') return 'Uploaded by MEO Admin';
+      if (doc?.uploadedByRole === 'BFP') return 'Uploaded by BFP Admin';
+      if (doc?.uploadedByRole === 'MAYOR') return 'Uploaded by Mayor Admin';
+      return 'Uploaded by Admin';
+    }
+    return 'Other Documents';
+  };
+
+  const groupedDocs = docsWithIndices.reduce((acc, item) => {
+    const label = groupLabel(item.doc);
+    if (!acc[label]) acc[label] = [];
+    acc[label].push(item);
+    return acc;
+  }, {});
+
+  const orderedGroups = [
+    'Uploaded by Applicant',
+    'Uploaded by System',
+    'Uploaded by MEO Admin',
+    'Uploaded by BFP Admin',
+    'Uploaded by Mayor Admin'
+  ];
+
+  // Keep the "revisions" callout section working (applicant re-uploads)
+  const revisions = docsWithIndices.filter(
+    (d) => d?.doc?.uploadedBy === 'user' && d?.doc?.requirementName === 'Revised Checklist/Documents'
+  );
+
   // Derived building reference used by Occupancy to link back to Building application
   const buildingRef = app.buildingPermitIdentifier || app.buildingPermitReferenceNo || app.permitInfo?.buildingPermitNo || '';
   const isOccupancy = (app.applicationType === 'Occupancy');
@@ -128,9 +166,10 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
         return;
       }
 
-      // Validate document index
-      if (documentIndex < 0 || documentIndex >= uploadedDocs.length) {
-        console.error('Invalid document index:', documentIndex, 'Total docs:', uploadedDocs.length);
+      // Validate document index (originalIndex in DB). We can't reliably compare against array length
+      // because originalIndex is stable even if indices are non-contiguous.
+      if (Number.isNaN(Number(documentIndex)) || Number(documentIndex) < 0) {
+        console.error('Invalid document index:', documentIndex);
         alert(`Invalid document index: ${documentIndex}. Please try again.`);
         return;
       }
@@ -180,10 +219,7 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
   };
 
 
-  // Create arrays with original indices preserved
-  const docsWithIndices = uploadedDocs.map((doc, index) => ({ doc, originalIndex: index }));
-  const revisions = docsWithIndices.filter(d => d.doc.requirementName === 'Revised Checklist/Documents');
-  const standardDocs = docsWithIndices.filter(d => d.doc.requirementName !== 'Revised Checklist/Documents');
+  // (moved) document grouping is computed near the top using stable originalIndex
 
   return (
     <div>
@@ -260,28 +296,45 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
         </div>
       )}
 
-      {/* Original Submission */}
-      <div className="space-y-3 mb-8">
-        <h5 className="text-sm font-bold text-gray-600 uppercase tracking-wider mb-2">Original Requirements</h5>
-        {standardDocs.length === 0 && (
+      {/* GROUPED DOCUMENTS */}
+      <div className="space-y-6 mb-8">
+        {uploadedDocs.length === 0 ? (
           <p className="text-sm text-gray-400 p-3 italic border border-dashed border-gray-200 rounded-lg text-center">
-            No original documents found.
+            No documents uploaded yet.
           </p>
+        ) : (
+          orderedGroups
+            .filter((g) => (groupedDocs[g] || []).length > 0)
+            .map((groupName) => (
+              <div key={groupName} className="space-y-2">
+                <h5 className="text-sm font-bold text-gray-600 uppercase tracking-wider mb-2">{groupName}</h5>
+                {(groupedDocs[groupName] || []).map((item) => (
+                  <div
+                    key={item.doc?._id || `${item.doc?.fileName || item.doc?.requirementName}-${item.originalIndex}`}
+                    className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 transition"
+                  >
+                    <div className="flex items-center min-w-0">
+                      <DocumentTextIcon className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm text-gray-700 truncate">
+                          {item.doc?.fileName || item.doc?.requirementName}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Uploaded: {item.doc?.uploadedAt ? new Date(item.doc.uploadedAt).toLocaleString() : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleViewDocument(item.originalIndex)}
+                      className="text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1 rounded-md border-none cursor-pointer"
+                    >
+                      View
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ))
         )}
-        {standardDocs.map((item, i) => (
-          <div key={i} className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 transition">
-            <div className="flex items-center">
-                <DocumentTextIcon className="w-5 h-5 text-gray-400 mr-3"/>
-                <span className="font-medium text-sm text-gray-700">{item.doc.requirementName}</span>
-            </div>
-            <button 
-              onClick={() => handleViewDocument(item.originalIndex)}
-              className="text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1 rounded-md border-none cursor-pointer"
-            >
-              View
-            </button>
-          </div>
-        ))}
       </div>
 
       {/* FLAGGED ISSUES SECTION */}
