@@ -184,7 +184,7 @@ export default function LandUseOcrAssist() {
                 {uploading ? 'Running OCR…' : 'Run OCR & Auto-Fill'}
               </button>
             </div>
-            {ocrResult?.confidence !== null && (
+            {typeof ocrResult?.confidence === 'number' && (
               <p className="text-xs text-gray-600 mt-2">OCR confidence: {Math.round(ocrResult.confidence)} / 100</p>
             )}
             {!!warnings.length && (

@@ -31,36 +31,6 @@ const BuildingApplication = () => {
   const { auth } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Pre-application prerequisite gate (Land Use / Zoning must be Verified)
-  const [checkingPreApp, setCheckingPreApp] = useState(true);
-  const [hasVerifiedLandUse, setHasVerifiedLandUse] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const check = async () => {
-      try {
-        await axios.get('/api/pre-application/land-use/latest-verified', {
-          headers: { Authorization: `Bearer ${auth.accessToken}` }
-        });
-        if (!cancelled) setHasVerifiedLandUse(true);
-      } catch (err) {
-        if (!cancelled) {
-          // 404 means none exists yet
-          setHasVerifiedLandUse(false);
-        }
-      } finally {
-        if (!cancelled) setCheckingPreApp(false);
-      }
-    };
-
-    if (auth?.accessToken) check();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [auth?.accessToken]);
-
   // NEW: STEP 0 STATE - Application Setup
   const [setupData, setSetupData] = useState({
     projectComplexity: '', // 'simple' | 'complex'
@@ -111,7 +81,11 @@ const BuildingApplication = () => {
       alert('Prefill applied from your latest verified Land Use/Zoning record. Please review the fields before submitting your Building Permit application.');
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to load verified Land Use/Zoning record.');
+      if (err?.response?.status === 404) {
+        alert('No verified Land Use/Zoning record found yet. This is optional — you can still proceed and fill the building form manually.');
+      } else {
+        alert(err.response?.data?.message || 'Failed to load verified Land Use/Zoning record.');
+      }
     } finally {
       setLoading(false);
     }
@@ -677,28 +651,7 @@ const BuildingApplication = () => {
 
           {/* STEP 0: APPLICATION SETUP */}
           {currentStep === 0 && (
-            checkingPreApp ? (
-              <div className="p-6 rounded-lg border bg-gray-50 text-center">
-                <p className="text-sm text-gray-700">Checking pre-application requirements…</p>
-              </div>
-            ) : !hasVerifiedLandUse ? (
-              <div className="p-6 sm:p-8 rounded-xl border bg-amber-50">
-                <h2 className="text-lg sm:text-xl font-bold text-amber-900">Land Use / Zoning Clearance required</h2>
-                <p className="text-sm text-amber-900 mt-2">
-                  Before you can start a Building Permit application, you must complete the Land Use / Zoning pre-application and confirm (verify) the extracted data.
-                </p>
-                <div className="mt-5 flex flex-col sm:flex-row gap-3">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/pre-application/land-use', { state: { from: 'building' } })}
-                    className="px-6 py-3 bg-amber-700 text-white rounded-lg font-semibold text-base hover:bg-amber-800 transition-all shadow-md"
-                  >
-                    Start Land Use / Zoning Pre-Application
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="application-setup space-y-8">
+            <div className="application-setup space-y-8">
               {/* Project Complexity */}
               <section>
                 <h2 className="text-lg sm:text-xl font-semibold mb-4 text-blue-600">1. Project Complexity</h2>
@@ -805,17 +758,34 @@ const BuildingApplication = () => {
                 </section>
               )}
 
+              {/* Optional Land Use / Zoning (Pre-Application) */}
+              <section className="p-4 rounded-lg border bg-gray-50">
+                <h3 className="text-sm font-semibold text-gray-900">Optional: Land Use / Zoning (OCR Assist)</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  If you have a scanned Zoning / Locational Clearance form, you can use OCR to help fill key location and cost fields. This is optional and does not submit anything.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 mt-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/pre-application/land-use', { state: { from: 'building' } })}
+                    className="px-6 py-3 bg-gray-800 text-white rounded-lg font-semibold text-base hover:bg-black transition-all shadow-md"
+                  >
+                    Start Land Use / Zoning (Optional)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={prefillFromLandUse}
+                    disabled={loading}
+                    className="px-6 py-3 bg-amber-600 text-white rounded-lg font-semibold text-base disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-amber-700 transition-all shadow-md"
+                  >
+                    {loading ? 'Loading…' : 'Prefill from Verified Land Use/Zoning'}
+                  </button>
+                </div>
+              </section>
+
               {/* Continue Button */}
               <div className="flex flex-col sm:flex-row justify-center gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={prefillFromLandUse}
-                  disabled={loading}
-                  className="px-6 py-3 bg-amber-600 text-white rounded-lg font-semibold text-base disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-amber-700 transition-all shadow-md"
-                >
-                  {loading ? 'Loading…' : 'Prefill from Verified Land Use/Zoning'}
-                </button>
-
                 <button
                   type="button"
                   onClick={proceedToForm}
@@ -834,7 +804,6 @@ const BuildingApplication = () => {
                 </button>
               </div>
             </div>
-            )
           )}
 
           {/* Progress Indicator - Only show for Steps 1+ */}
