@@ -13,6 +13,15 @@ export const ocrUpload = async (req, res) => {
   } catch (error) {
     console.error('pre-application OCR upload error:', error);
     const status = error?.statusCode || 500;
+
+    // For some validation/OCR failures, we still return partial extraction data
+    if (error?.partialResult) {
+      return res.status(status).json({
+        message: error?.message || 'OCR validation failed',
+        ...error.partialResult
+      });
+    }
+
     return res.status(status).json({
       message: error?.message || 'Server error during OCR processing',
       details: error?.details

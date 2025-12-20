@@ -14,15 +14,33 @@ export const documentUpload = multer({
     fileFilter: (req, file, cb) => {
         const allowedTypes = [
             "application/pdf",
-            "application/msword", 
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "image/jpeg",
             "image/png",
             "image/jpg"
         ];
-        
+
         if (!allowedTypes.includes(file.mimetype)) {
             return cb(new Error("Only PDF, Word, and Image files are allowed."));
+        }
+        cb(null, true);
+    }
+});
+
+// Storage for OCR uploads (PDF/images only). Keeps other document endpoints unchanged.
+export const ocrDocumentUpload = multer({
+    storage: docStorage,
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = [
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "image/jpg"
+        ];
+
+        if (!allowedTypes.includes(file.mimetype)) {
+            return cb(new Error("Only PDF and image files are allowed for OCR."));
         }
         cb(null, true);
     }

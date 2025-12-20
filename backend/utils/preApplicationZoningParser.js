@@ -34,7 +34,7 @@ const firstMatch = (text, patterns) => {
 };
 
 // A very lightweight scoring: 1 if extracted non-empty, else 0.
-// (We keep it explicit so frontend can highlight low-confidence fields.)
+// (Frontend uses this as a confidence indicator per field, not as a probability.)
 const score = (v) => (v ? 1 : 0);
 
 export function parseZoningClearanceText(rawText) {
@@ -50,7 +50,8 @@ export function parseZoningClearanceText(rawText) {
     };
   }
 
-  // Anchors vary per LGU. We include common terms used in PH forms.
+  // Anchors vary per LGU, but we bias patterns to the typical ZONING-APPLICATION layout.
+  // Principle: never invent values; only return what can be anchored/detected from text.
   const fields = {
     applicantName: firstMatch(text, [
       /Applicant\s*Name\s*[:\-]?\s*([A-Z0-9 .,'\-]{3,})/i,
@@ -70,18 +71,25 @@ export function parseZoningClearanceText(rawText) {
     ]),
 
     cityMunicipality: firstMatch(text, [
-      /(City|Municipality)\s*[:\-]?\s*([A-Z0-9 .,'\-]{3,})/i,
-      /City\s*\/\s*Municipality\s*[:\-]?\s*([A-Z0-9 .,'\-]{3,})/i
+      /City\s*\/\s*Municipality\s*[:\-]?\s*([A-Z0-9 .,'\-]{3,})/i,
+      /(City|Municipality)\s*[:\-]?\s*([A-Z0-9 .,'\-]{3,})/i
+    ]),
+
+    province: firstMatch(text, [
+      /Province\s*[:\-]?\s*([A-Z0-9 .,'\-]{3,})/i,
+      /Prov\.?\s*[:\-]?\s*([A-Z0-9 .,'\-]{3,})/i
     ]),
 
     lotNumber: firstMatch(text, [
       /Lot\s*(?:No\.?|Number)\s*[:\-]?\s*([A-Z0-9\-]{1,})/i,
-      /Lot\s*#\s*[:\-]?\s*([A-Z0-9\-]{1,})/i
+      /Lot\s*#\s*[:\-]?\s*([A-Z0-9\-]{1,})/i,
+      /Lot\s*[:\-]?\s*([A-Z0-9\-]{1,})/i
     ]),
 
     blockNumber: firstMatch(text, [
       /Block\s*(?:No\.?|Number)\s*[:\-]?\s*([A-Z0-9\-]{1,})/i,
-      /Blk\.?\s*[:\-]?\s*([A-Z0-9\-]{1,})/i
+      /Blk\.?\s*[:\-]?\s*([A-Z0-9\-]{1,})/i,
+      /Block\s*[:\-]?\s*([A-Z0-9\-]{1,})/i
     ]),
 
     existingLandUse: firstMatch(text, [
@@ -91,6 +99,7 @@ export function parseZoningClearanceText(rawText) {
 
     zoningClassification: firstMatch(text, [
       /Zoning\s*Classification\s*[:\-]?\s*([A-Z0-9 .,'\-\/]{2,})/i,
+      /Zoning\s*[:\-]?\s*([A-Z0-9 .,'\-\/]{2,})/i,
       /Zone\s*[:\-]?\s*([A-Z0-9 .,'\-\/]{2,})/i,
       /Land\s*Use\s*Classification\s*[:\-]?\s*([A-Z0-9 .,'\-\/]{2,})/i
     ]),
@@ -103,19 +112,20 @@ export function parseZoningClearanceText(rawText) {
 
     lotArea: firstMatch(text, [
       /Lot\s*Area\s*[:\-]?\s*([0-9,\.]{1,}(?:\s*(?:sq\.?m\.?|sqm|m2))?)/i,
-      /Area\s*of\s*Lot\s*[:\-]?\s*([0-9,\.]{1,}(?:\s*(?:sq\.?m\.?|sqm|m2))?)/i
+      /Area\s*of\s*Lot\s*[:\-]?\s*([0-9,\.]{1,}(?:\s*(?:sq\.?m\.?|sqm|m2))?)/i,
+      /Lot\s*Area\s*\(?(?:sqm|sq\.?m\.?|m2)\)?\s*[:\-]?\s*([0-9,\.]{1,})/i
     ]),
 
     projectCost: firstMatch(text, [
       /Project\s*Cost\s*[:\-]?\s*(PHP\s*)?([0-9,\.]{2,})/i,
-      /Estimated\s*Cost\s*[:\-]?\s*(PHP\s*)?([0-9,\.]{2,})/i
+      /Estimated\s*Cost\s*[:\-]?\s*(PHP\s*)?([0-9,\.]{2,})/i,
+      /Estimated\s*Project\s*Cost\s*[:\-]?\s*(PHP\s*)?([0-9,\.]{2,})/i
     ])
   };
 
   // Fix cityMunicipality match when regex has 2 capture groups
   // (if it captured "City" or "Municipality" in group 1)
   if (fields.cityMunicipality && /^(city|municipality)$/i.test(fields.cityMunicipality)) {
-    // Try alternative: look for "City/Municipality: <value>"
     fields.cityMunicipality = firstMatch(text, [
       /City\s*\/\s*Municipality\s*[:\-]?\s*([A-Z0-9 .,'\-]{3,})/i
     ]);

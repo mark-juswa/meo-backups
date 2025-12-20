@@ -1,6 +1,6 @@
 import express from 'express';
 import { verifyToken } from '../middleware/authMiddleware.js';
-import { documentUpload } from '../middleware/uploadMiddleware.js';
+import { ocrDocumentUpload } from '../middleware/uploadMiddleware.js';
 import { ocrUpload } from '../controllers/preApplicationController.js';
 import { getLatestVerifiedLandUse } from '../controllers/landUseApplicationQueryController.js';
 import {
@@ -17,7 +17,7 @@ const router = express.Router();
 
 // PRE-APPLICATION (Land Use / Zoning)
 // OCR is assistive only; never submits/creates permits.
-router.post('/ocr/upload', verifyToken, documentUpload.single('file'), ocrUpload);
+router.post('/ocr/upload', verifyToken, ocrDocumentUpload.single('file'), ocrUpload);
 
 // Land Use / Zoning pre-application records
 router.post('/land-use', verifyToken, createLandUseDraft);

@@ -76,6 +76,44 @@ function convertPdfToPngFiles({ pdfPath, outDir, prefix }) {
   return files;
 }
 
+const REQUIRED_ZONING_FIELDS = [
+  'applicantName',
+  'projectLocation',
+  'barangay',
+  'cityMunicipality',
+  'province',
+  'lotNumber',
+  'blockNumber',
+  'lotArea',
+  'existingLandUse',
+  'zoningClassification',
+  'projectTypeNature',
+  'projectCost'
+];
+
+const detectDocumentType = (rawText, originalName = '') => {
+  const t = String(rawText || '').toLowerCase();
+  const n = String(originalName || '').toLowerCase();
+
+  const hasCore =
+    /\bzoning\b/.test(t) ||
+    /\blocational\b/.test(t) ||
+    /\bland\s*use\b/.test(t) ||
+    /\bzoning\b/.test(n) ||
+    /\blocational\b/.test(n) ||
+    /\bland\s*use\b/.test(n);
+
+  const hasClearance = /\bclearance\b/.test(t) || /\bclearance\b/.test(n) || /\bapplication\b/.test(t);
+
+  if (hasCore && hasClearance) {
+    if (t.includes('locational')) return 'Locational Clearance';
+    if (t.includes('land use')) return 'Land Use Clearance';
+    return 'Zoning Clearance';
+  }
+
+  return 'Unknown';
+};
+
 export async function runOcrOnUpload(file) {
   const warnings = [];
 
@@ -93,39 +131,46 @@ export async function runOcrOnUpload(file) {
   let rawText = '';
   let confidence = null;
 
-  if (isImage) {
-    const r = await recognizeImageBuffer(file.buffer);
-    rawText = r.text;
-    confidence = r.confidence;
-  } else {
-    // PDF: write to temp file, convert pages to PNGs, OCR each page
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tmp_rovodev_preapp_pdf_'));
-    const tmpPdfPath = path.join(tmpDir, 'upload.pdf');
+  // OCR phase should be resilient: if OCR fails, return partial data (warnings + missing fields)
+  try {
+    if (isImage) {
+      const r = await recognizeImageBuffer(file.buffer);
+      rawText = r.text;
+      confidence = r.confidence;
+    } else {
+      // PDF: write to temp file, convert pages to PNGs, OCR each page
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tmp_rovodev_preapp_pdf_'));
+      const tmpPdfPath = path.join(tmpDir, 'upload.pdf');
 
-    try {
-      fs.writeFileSync(tmpPdfPath, file.buffer);
+      try {
+        fs.writeFileSync(tmpPdfPath, file.buffer);
 
-      const pngFiles = convertPdfToPngFiles({ pdfPath: tmpPdfPath, outDir: tmpDir, prefix: 'page' });
-      const pageResults = [];
+        const pngFiles = convertPdfToPngFiles({ pdfPath: tmpPdfPath, outDir: tmpDir, prefix: 'page' });
+        const pageResults = [];
 
-      for (const pngPath of pngFiles) {
-        const buf = fs.readFileSync(pngPath);
-        // eslint-disable-next-line no-await-in-loop
-        pageResults.push(await recognizeImageBuffer(buf));
+        for (const pngPath of pngFiles) {
+          const buf = fs.readFileSync(pngPath);
+          // eslint-disable-next-line no-await-in-loop
+          pageResults.push(await recognizeImageBuffer(buf));
+        }
+
+        rawText = pageResults.map((p) => p.text).join('\n\n');
+        const confidences = pageResults.map((p) => p.confidence).filter((c) => typeof c === 'number');
+        confidence = confidences.length ? confidences.reduce((a, b) => a + b, 0) / confidences.length : null;
+
+        if (pngFiles.length >= MAX_PDF_PAGES) {
+          warnings.push(`PDF has multiple pages. Only first ${MAX_PDF_PAGES} page(s) were processed for OCR.`);
+        }
+      } finally {
+        safeUnlink(tmpPdfPath);
+        safeRmDir(tmpDir);
       }
-
-      rawText = pageResults.map((p) => p.text).join('\n\n');
-      const confidences = pageResults.map((p) => p.confidence).filter((c) => typeof c === 'number');
-      confidence = confidences.length ? confidences.reduce((a, b) => a + b, 0) / confidences.length : null;
-
-      if (pngFiles.length >= MAX_PDF_PAGES) {
-        warnings.push(`PDF has multiple pages. Only first ${MAX_PDF_PAGES} page(s) were processed for OCR.`);
-      }
-    } finally {
-      safeUnlink(tmpPdfPath);
-      safeRmDir(tmpDir);
     }
+  } catch (err) {
+    warnings.push(`OCR failed to read the uploaded document. ${err?.message || ''}`.trim());
   }
+
+  const documentType = detectDocumentType(rawText, file.originalname);
 
   const parsed = parseZoningClearanceText(rawText);
 
@@ -137,14 +182,37 @@ export async function runOcrOnUpload(file) {
   // Merge parser warnings
   if (parsed.warnings?.length) warnings.push(...parsed.warnings);
 
+  const detectedFields = parsed.fields || {};
+  const confidenceScores = parsed.fieldScores || {};
+  const missingFields = REQUIRED_ZONING_FIELDS.filter((k) => {
+    const v = detectedFields?.[k];
+    return !v || (typeof v === 'string' && !v.trim());
+  });
+
+  // Validate document requirement (Land Use / Zoning / Locational Clearance)
+  if (documentType === 'Unknown') {
+    const err = new Error(
+      'Uploaded document does not appear to be a Land Use / Zoning / Locational Clearance. Please upload the correct clearance document.'
+    );
+    err.statusCode = 400;
+    err.partialResult = {
+      rawText,
+      detectedFields,
+      missingFields,
+      confidenceScores,
+      warnings: [...warnings, 'Document type check failed.']
+    };
+    throw err;
+  }
+
   return {
+    documentType,
     rawText,
-    confidence,
-    parsed: {
-      fields: parsed.fields,
-      fieldScores: parsed.fieldScores,
-      parseQuality: parsed.parseQuality
-    },
-    warnings
+    detectedFields,
+    missingFields,
+    confidenceScores,
+    warnings,
+    // keep legacy fields for backward-compat (can be removed later)
+    confidence
   };
 }

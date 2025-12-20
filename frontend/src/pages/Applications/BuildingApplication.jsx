@@ -54,6 +54,7 @@ const BuildingApplication = () => {
       }
 
       // Map only safe overlaps into existing building form state (no schema changes)
+// NOTE: LandUseApplication currently does not persist province, so we cannot prefill province here yet.
       setBox1((prev) => ({
         ...prev,
         owner: {
@@ -762,7 +763,7 @@ const BuildingApplication = () => {
               <section className="p-4 rounded-lg border bg-gray-50">
                 <h3 className="text-sm font-semibold text-gray-900">Optional: Land Use / Zoning (OCR Assist)</h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  If you have a scanned Zoning / Locational Clearance form, you can use OCR to help fill key location and cost fields. This is optional and does not submit anything.
+                  If you have a scanned Land Use / Zoning / Locational Clearance document, you can use OCR to extract key location and cost fields before the main application. This is optional and does not submit anything.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 mt-3">
                   <button
