@@ -21,6 +21,7 @@ import DocumentUpload from './pages/Applications/DocumentUpload';
 import VerifyEmail from './pages/components/VerifyEmail';
 import ForgotPassword from "./pages/registration/ForgotPassword";
 import ResetPassword from "./pages/registration/ResetPassword";
+import LandUseOcrAssist from "./pages/PreApplication/LandUseOcrAssist.jsx";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -108,6 +109,15 @@ function App() {
               <Route path="/verify-email/:token" element={<VerifyEmail />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+              <Route
+                path="/pre-application/land-use"
+                element={
+                  <PrivateRoute>
+                    <LandUseOcrAssist />
+                  </PrivateRoute>
+                }
+              />
 
             </Routes>
           </Layout>

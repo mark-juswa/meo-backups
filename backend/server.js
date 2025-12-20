@@ -13,6 +13,7 @@ import userRoutes from './routes/users.js';
 import documentRoutes from './routes/documents.js';
 import applicationRoutes from './routes/applications.js';
 import eventRoutes from './routes/events.js';
+import preApplicationRoutes from './routes/preApplication.js';
 
 
 EventEmitter.defaultMaxListeners = 20;
@@ -89,6 +90,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/pre-application', preApplicationRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
