@@ -77,18 +77,57 @@ function convertPdfToPngFiles({ pdfPath, outDir, prefix }) {
 }
 
 const REQUIRED_ZONING_FIELDS = [
-  'applicantName',
-  'projectLocation',
-  'barangay',
-  'cityMunicipality',
-  'province',
-  'lotNumber',
-  'blockNumber',
-  'lotArea',
-  'existingLandUse',
-  'zoningClassification',
-  'projectTypeNature',
-  'projectCost'
+  // Administrative fields
+  'application_no',
+  'date_of_receipt',
+  'or_no',
+  'or_date_issued',
+  'or_amount_paid',
+  
+  // Applicant details
+  'applicant_name',
+  'corporation_name',
+  'applicant_address', 
+  'corporation_address',
+  'authorized_rep_name',
+  'authorized_rep_address',
+  
+  // Project details
+  'project_type',
+  'project_nature_new',
+  'project_nature_existing',
+  'project_nature_other',
+  'project_location',
+  'project_tenure_permanent',
+  'project_tenure_temporary',
+  
+  // Land rights
+  'right_owner',
+  'right_lessee', 
+  'right_other',
+  
+  // Areas
+  'lot_area_sqm',
+  'building_area',
+  
+  // Land use classifications
+  'land_use_residential',
+  'land_use_institutional',
+  'land_use_commercial',
+  'land_use_industrial',
+  'land_use_vacant',
+  'land_use_agricultural',
+  
+  // Administrative processes
+  'notice_date',
+  'applied_other_yes',
+  'applied_other_no', 
+  'other_application_date',
+  'other_application_action',
+  
+  // Signatures
+  'rep_signature_name',
+  'applicant_signature_name'
 ];
 
 const detectDocumentType = (rawText, originalName = '') => {

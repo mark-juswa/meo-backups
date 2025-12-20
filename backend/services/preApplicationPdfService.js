@@ -30,25 +30,79 @@ export async function generateZoningFilledPdfBytes(landUseData) {
   // If template has form fields, fill them.
   const form = pdfDoc.getForm();
 
-  // These field names must match the PDF template form field names.
-  // You can adjust mapping once the exact LGU template is chosen.
+  // Field mapping for HLURB Locational Clearance template
+  // Maps our database field names to actual PDF form field names
   const mapping = {
-    applicantName: 'applicant_name',
-    projectLocation: 'project_location',
-    barangay: 'barangay',
-    cityMunicipality: 'city_municipality',
-    lotNumber: 'lot_no',
-    blockNumber: 'block_no',
-    existingLandUse: 'existing_land_use',
-    zoningClassification: 'zoning_classification',
-    projectTypeNature: 'project_type_nature',
-    lotArea: 'lot_area',
-    projectCost: 'project_cost'
+    // Administrative fields
+    application_no: 'application_no',
+    date_of_receipt: 'date_of_receipt',
+    or_no: 'or_no',
+    or_date_issued: 'or_date_issued',
+    or_amount_paid: 'or_amount_paid',
+    
+    // Applicant details
+    applicant_name: 'applicant_name',
+    corporation_name: 'corporation_name',
+    applicant_address: 'applicant_address',
+    corporation_address: 'corporation_address',
+    authorized_rep_name: 'authorized_rep_name',
+    authorized_rep_address: 'authorized_rep_address',
+    
+    // Project details
+    project_type: 'project_type',
+    project_nature_new: 'project_nature_new',
+    project_nature_existing: 'project_nature_existing',
+    project_nature_other: 'project_nature_other',
+    project_location: 'project_location',
+    project_tenure_permanent: 'project_tenure_permanent',
+    project_tenure_temporary: 'project_tenure_temporary',
+    
+    // Land rights
+    right_owner: 'right_owner',
+    right_lessee: 'right_lessee',
+    right_other: 'right_other',
+    
+    // Areas
+    lot_area_sqm: 'lot_area_sqm',
+    building_area: 'building_area',
+    
+    // Land use classifications
+    land_use_residential: 'land_use_residential',
+    land_use_institutional: 'land_use_institutional',
+    land_use_commercial: 'land_use_commercial',
+    land_use_industrial: 'land_use_industrial',
+    land_use_vacant: 'land_use_vacant',
+    land_use_agricultural: 'land_use_agricultural',
+    
+    // Administrative processes
+    notice_date: 'notice_date',
+    applied_other_yes: 'applied_other_yes',
+    applied_other_no: 'applied_other_no',
+    other_application_date: 'other_application_date',
+    other_application_action: 'other_application_action',
+    
+    // Signatures
+    rep_signature_name: 'rep_signature_name',
+    applicant_signature_name: 'applicant_signature_name'
   };
 
   for (const [key, fieldName] of Object.entries(mapping)) {
+    const value = landUseData?.[key];
+    if (!value) continue;
+    
     try {
-      form.getTextField(fieldName).setText(toStr(landUseData?.[key]));
+      // Handle checkbox fields (marked as 'checked')
+      if (value === 'checked') {
+        try {
+          form.getCheckBox(fieldName).check();
+        } catch (_) {
+          // Fallback to text field if checkbox doesn't exist
+          form.getTextField(fieldName).setText('✓');
+        }
+      } else {
+        // Regular text field
+        form.getTextField(fieldName).setText(toStr(value));
+      }
     } catch (_) {
       // Template may not contain the field; ignore to stay robust.
     }

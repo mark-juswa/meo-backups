@@ -33,8 +33,8 @@ const BuildingApplication = () => {
 
   // NEW: STEP 0 STATE - Application Setup
   const [setupData, setSetupData] = useState({
-    projectComplexity: '', // 'simple' | 'complex'
-    applicationType: '', // 'new' | 'renewal' | 'amendatory'
+    projectComplexity: '', 
+    applicationType: '', 
     existingPermitRef: '',
     isSetupComplete: false
   });
@@ -53,33 +53,69 @@ const BuildingApplication = () => {
         return;
       }
 
-      // Map only safe overlaps into existing building form state (no schema changes)
-// NOTE: LandUseApplication currently does not persist province, so we cannot prefill province here yet.
+      // Parse applicant name if available
+      const nameParts = (lu.applicant_name || '').split(' ').filter(n => n.trim());
+      const firstName = nameParts.slice(0, -1).join(' ') || '';
+      const lastName = nameParts[nameParts.length - 1] || '';
+
       setBox1((prev) => ({
         ...prev,
         owner: {
           ...prev.owner,
-          // If applicantName looks like "LAST, FIRST MI", user can still edit later.
-          lastName: prev.owner.lastName,
-          firstName: prev.owner.firstName,
+          firstName: firstName || prev.owner.firstName,
+          lastName: lastName || prev.owner.lastName,
+          // Keep existing middleInitial since HLURB form doesn't typically split it out
           middleInitial: prev.owner.middleInitial
+        },
+        enterprise: {
+          ...prev.enterprise,
+          // Use corporation name if available, otherwise use applicant name as fallback
+          projectTitle: lu.corporation_name || lu.project_type || prev.enterprise.projectTitle,
+          address: {
+            ...prev.enterprise.address,
+            // Use corporation address, fallback to applicant address
+            street: lu.corporation_address || lu.applicant_address || prev.enterprise.address.street,
+            // Note: HLURB template doesn't break down addresses into components like barangay/city
+            // so we put the full address in street and let user refine it
+          }
         },
         location: {
           ...prev.location,
-          lotNo: lu.lotNumber || prev.location.lotNo,
-          blkNo: lu.blockNumber || prev.location.blkNo,
-          barangay: lu.barangay || prev.location.barangay,
-          city: lu.cityMunicipality || prev.location.city,
-          street: lu.projectLocation || prev.location.street
+          // Map project location to street (user may need to refine)
+          street: lu.project_location || prev.location.street,
+          // Note: HLURB template doesn't have separate barangay/city fields typically
+          // but if the project_location contains structured address, user can edit
+          barangay: prev.location.barangay, // Keep existing unless we can parse from project_location
+          city: prev.location.city, // Keep existing unless we can parse from project_location
         },
         projectDetails: {
           ...prev.projectDetails,
-          lotArea: lu.lotArea || prev.projectDetails.lotArea,
-          totalEstimatedCost: lu.projectCost || prev.projectDetails.totalEstimatedCost
+          lotArea: lu.lot_area_sqm || prev.projectDetails.lotArea,
+          totalFloorArea: lu.building_area || prev.projectDetails.totalFloorArea,
+          // Map OR amount as rough estimate if no other cost data
+          totalEstimatedCost: lu.or_amount_paid || prev.projectDetails.totalEstimatedCost
         }
       }));
 
-      alert('Prefill applied from your latest verified Land Use/Zoning record. Please review the fields before submitting your Building Permit application.');
+      // If we have box3 (applicant signature data), prefill that too
+      if (lu.applicant_name) {
+        setBox3((prev) => ({
+          ...prev,
+          name: lu.applicant_name || prev.name,
+          address: lu.applicant_address || prev.address
+        }));
+      }
+
+      // If we have authorized rep data and no box3 name yet, use rep info
+      if (lu.authorized_rep_name && !box3.name) {
+        setBox3((prev) => ({
+          ...prev,
+          name: lu.authorized_rep_name,
+          address: lu.authorized_rep_address || prev.address
+        }));
+      }
+
+      alert('Prefill applied from your latest verified Land Use/Zoning record.\n\nExtracted data includes:\n• Applicant information\n• Project location and areas\n• Corporation details (if applicable)\n\nPlease review and refine all fields before submitting your Building Permit application.');
     } catch (err) {
       console.error(err);
       if (err?.response?.status === 404) {
