@@ -797,7 +797,7 @@ const BuildingApplication = () => {
 
               {/* Optional Land Use / Zoning (Pre-Application) */}
               <section className="p-4 rounded-lg border bg-gray-50">
-                <h3 className="text-sm font-semibold text-gray-900">Optional: Land Use / Zoning (OCR Assist)</h3>
+                <h3 className="text-sm font-semibold text-gray-900">Optional: Land Use / Zoning</h3>
                 <p className="text-sm text-gray-600 mt-1">
                   If you have a scanned Land Use / Zoning / Locational Clearance document, you can use OCR to extract key location and cost fields before the main application. This is optional and does not submit anything.
                 </p>
@@ -809,7 +809,7 @@ const BuildingApplication = () => {
                   >
                     Start Land Use / Zoning (Optional)
                   </button>
-
+                {/* Optional Land Use / Zoning (Pre-Application) 
                   <button
                     type="button"
                     onClick={prefillFromLandUse}
@@ -818,6 +818,7 @@ const BuildingApplication = () => {
                   >
                     {loading ? 'Loading…' : 'Prefill from Verified Land Use/Zoning'}
                   </button>
+                  */}
                 </div>
               </section>
 

@@ -367,6 +367,8 @@ export default function LandUseOcrAssist() {
                 >
                   Confirm Extracted Data
                 </button>
+
+                 {/* Group fields by section 
                 <button
                   type="button"
                   onClick={generatePdf}
@@ -383,6 +385,7 @@ export default function LandUseOcrAssist() {
                 >
                   Preview / Download PDF
                 </button>
+                */}
               </div>
               {!landUseId && (
                 <p className="text-xs text-gray-600 mt-2">Upload a clearance document first to create a draft record.</p>
